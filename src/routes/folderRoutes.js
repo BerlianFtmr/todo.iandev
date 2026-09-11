@@ -9,6 +9,9 @@ router.get('/', FolderController.getFolders);
 // Endpoint untuk membuat folder baru
 router.post('/', FolderController.createFolder);
 
+// Endpoint untuk mengubah folder
+router.put('/:id', FolderController.updateFolder);
+
 // Endpoint untuk menghapus folder berdasarkan ID
 router.delete('/:id', FolderController.deleteFolder);
 

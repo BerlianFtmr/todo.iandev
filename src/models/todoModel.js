@@ -27,17 +27,52 @@ const TodoModel = {
     return result.insertId;
   },
 
-  // Update status (pending <-> completed)
-  async updateStatus(id, status) {
-    await db.execute(
-      'UPDATE todos SET status = ? WHERE id = ?',
-      [status, id]
+  // Update data task (judul, deskripsi, folder, icon)
+  async update(id, userId, payload) {
+    const fields = [];
+    const values = [];
+
+    const allowed = {
+      title: payload.title,
+      description: payload.description,
+      priority: payload.priority,
+      icon: payload.icon,
+      folder_id: payload.folder_id,
+      due_date: payload.due_date
+    };
+
+    for (const [column, value] of Object.entries(allowed)) {
+      if (value === undefined) continue;
+      fields.push(`${column} = ?`);
+      values.push(value);
+    }
+
+    if (fields.length === 0) return 0;
+
+    values.push(id, userId);
+    const [result] = await db.execute(
+      `UPDATE todos SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`,
+      values
     );
+    return result.affectedRows;
+  },
+
+  // Update status (pending <-> completed)
+  async updateStatus(id, userId, status) {
+    const [result] = await db.execute(
+      'UPDATE todos SET status = ? WHERE id = ? AND user_id = ?',
+      [status, id, userId]
+    );
+    return result.affectedRows;
   },
 
   // Hapus task
-  async delete(id) {
-    await db.execute('DELETE FROM todos WHERE id = ?', [id]);
+  async delete(id, userId) {
+    const [result] = await db.execute(
+      'DELETE FROM todos WHERE id = ? AND user_id = ?',
+      [id, userId]
+    );
+    return result.affectedRows;
   }
 };
 

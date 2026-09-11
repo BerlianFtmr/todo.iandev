@@ -17,6 +17,15 @@ const CommitLogModel = {
       [userId, todoId, message]
     );
     return result.insertId;
+  },
+
+  // Hapus commit log berdasarkan ID
+  async delete(id) {
+    const [result] = await db.execute(
+      'DELETE FROM commit_logs WHERE id = ?',
+      [id]
+    );
+    return result.affectedRows;
   }
 };
 

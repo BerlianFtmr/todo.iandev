@@ -619,24 +619,47 @@
       { id: 2, todoId: 2, message: 'Menyiapkan sinkronisasi localStorage otomatis ketika offline/preview.', createdAt: '2026-09-10 11:40' }
     ];
 
+    // Base URL backend. Dapat dioverride lewat window.__API_BASE__ bila frontend
+    // dipisah dari server Express (mis. Vite dev server di port lain).
+    const API_BASE = (() => {
+      if (typeof window !== 'undefined' && window.__API_BASE__) {
+        return String(window.__API_BASE__).replace(/\/$/, '');
+      }
+      const origin = window.location.origin;
+      if (origin && origin !== 'null' && (origin.startsWith('http://') || origin.startsWith('https://'))) {
+        return origin.replace(/\/$/, '');
+      }
+      // Fallback default saat dibuka dari environment blob/sandbox
+      return 'http://localhost:5000';
+    })();
+
     async function safeFetch(endpoint, options = {}) {
+      const url = endpoint.startsWith('http://') || endpoint.startsWith('https://')
+        ? endpoint
+        : API_BASE + '/' + endpoint.replace(/^\//, '');
       try {
-        let url = endpoint;
-        if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
-          const origin = window.location.origin;
-          if (origin && origin !== 'null' && (origin.startsWith('http://') || origin.startsWith('https://'))) {
-            url = origin.replace(/\/$/, '') + '/' + endpoint.replace(/^\//, '');
-          } else {
-            return null;
-          }
-        }
         const response = await fetch(url, options);
         return response;
       } catch (err) {
-        console.warn(`API endpoint "${endpoint}" tidak dapat dijangkau. Menggunakan mode lokal/storage.`, err);
+        console.error(`Gagal menghubungi API "${url}". Pastikan backend Express berjalan.`, err);
         return null;
       }
     }
+
+    // Helper untuk menampilkan notifikasi singkat
+    function showToast(message, type = 'info') {
+      const colors = {
+        info: 'bg-slate-800',
+        success: 'bg-emerald-600',
+        error: 'bg-rose-600'
+      };
+      const el = document.createElement('div');
+      el.className = `fixed bottom-5 right-5 z-[9999] px-4 py-3 rounded-xl text-white text-sm font-medium shadow-lg ${colors[type] || colors.info}`;
+      el.innerText = message;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
 
     // LOCAL STORAGE PERSISTENCE HELPERS (Isolated per User)
     function saveLocalData() {
@@ -652,33 +675,33 @@
     }
 
     function loadLocalFolders() {
-      if (!state.currentUser) { state.folders = [...DEFAULT_FOLDERS]; return; }
+      if (!state.currentUser) { state.folders = []; return; }
       const uId = state.currentUser.id;
       const saved = localStorage.getItem(`focusdo_folders_${uId}`);
       if (saved) {
         try { state.folders = JSON.parse(saved); return; } catch(e){}
       }
-      state.folders = [...DEFAULT_FOLDERS];
+      state.folders = [];
     }
 
     function loadLocalTodos() {
-      if (!state.currentUser) { state.todos = [...DEFAULT_TODOS]; return; }
+      if (!state.currentUser) { state.todos = []; return; }
       const uId = state.currentUser.id;
       const saved = localStorage.getItem(`focusdo_todos_${uId}`);
       if (saved) {
         try { state.todos = JSON.parse(saved); return; } catch(e){}
       }
-      state.todos = [...DEFAULT_TODOS];
+      state.todos = [];
     }
 
     function loadLocalLogs() {
-      if (!state.currentUser) { state.commitLogs = [...DEFAULT_LOGS]; return; }
+      if (!state.currentUser) { state.commitLogs = []; return; }
       const uId = state.currentUser.id;
       const saved = localStorage.getItem(`focusdo_logs_${uId}`);
       if (saved) {
         try { state.commitLogs = JSON.parse(saved); return; } catch(e){}
       }
-      state.commitLogs = [...DEFAULT_LOGS];
+      state.commitLogs = [];
     }
 
     function switchAuthTab(tab) {
@@ -729,19 +752,21 @@
         body: JSON.stringify({ name, email, password })
       });
 
-      if (response && response.ok) {
-        showAuthAlert('loginAlert', 'Pendaftaran berhasil! Silakan masuk.');
-      } else {
-        // Standalone / Offline Fallback Registration
-        const newUser = { id: Date.now(), name, email, password };
-        const savedUsers = JSON.parse(localStorage.getItem('focusdo_registered_users') || '[]');
-        savedUsers.push(newUser);
-        localStorage.setItem('focusdo_registered_users', JSON.stringify(savedUsers));
+      if (!response) {
+        showAuthAlert('registerAlert', 'Tidak dapat terhubung ke server. Pastikan backend berjalan.');
+        return;
+      }
+
+      const resData = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        showAuthAlert('registerAlert', resData.error || 'Pendaftaran gagal. Coba lagi.');
+        return;
       }
 
       document.getElementById('loginEmail').value = email;
       document.getElementById('loginPassword').value = '';
       switchAuthTab('login');
+      showAuthAlert('loginAlert', resData.message || 'Pendaftaran berhasil! Silakan masuk.');
     }
 
     async function handleLogin(e) {
@@ -762,24 +787,24 @@
         body: JSON.stringify({ email, password })
       });
 
-      if (response && response.ok) {
-        const resData = await response.json().catch(() => null);
-        if (resData?.user) {
-          userObj = resData.user;
-        }
+      if (!response) {
+        showAuthAlert('loginAlert', 'Tidak dapat terhubung ke server. Pastikan backend berjalan.');
+        return;
+      }
+
+      const resData = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        showAuthAlert('loginAlert', resData.error || 'Email atau kata sandi salah.');
+        return;
+      }
+
+      if (resData?.user) {
+        userObj = resData.user;
       }
 
       if (!userObj) {
-        // Check registered local users or create active session object
-        const savedUsers = JSON.parse(localStorage.getItem('focusdo_registered_users') || '[]');
-        const matched = savedUsers.find(u => u.email === email && u.password === password);
-        
-        if (matched) {
-          userObj = { id: matched.id, name: matched.name, email: matched.email };
-        } else {
-          // Dynamic active session for new email
-          userObj = { id: Math.abs(hashCode(email)), name: nameFromEmail(email), email: email };
-        }
+        showAuthAlert('loginAlert', 'Respons login tidak valid.');
+        return;
       }
 
       state.currentUser = userObj;
@@ -1220,37 +1245,31 @@
       const text = input.value.trim();
       if (!text || !state.activeTodoId) return;
 
-      const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
-
       const response = await safeFetch(`/api/todos/${state.activeTodoId}/logs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text })
+        body: JSON.stringify({ message: text, user_id: state.currentUser?.id })
       });
 
-      let newId = Date.now();
-      if (response && response.ok) {
-        const resData = await response.json().catch(() => null);
-        if (resData?.id) newId = resData.id;
+      if (!response || !response.ok) {
+        const err = response ? await response.json().catch(() => ({})) : {};
+        showToast(err.error || 'Gagal menyimpan catatan progress.', 'error');
+        return;
       }
 
-      state.commitLogs.unshift({
-        id: newId,
-        todoId: state.activeTodoId,
-        message: text,
-        createdAt: now
-      });
-
-      saveLocalData();
       input.value = '';
-      renderScreenCommitLogs();
+      await fetchCommitLogsFromDB(state.activeTodoId);
+      showToast('Catatan progress ditambahkan.', 'success');
     }
 
     async function deleteScreenCommitLog(logId) {
-      await safeFetch(`/api/commit-logs/${logId}`, { method: 'DELETE' });
-      state.commitLogs = state.commitLogs.filter(l => l.id !== logId);
-      saveLocalData();
-      renderScreenCommitLogs();
+      const response = await safeFetch(`/api/commit-logs/${logId}`, { method: 'DELETE' });
+      if (!response || !response.ok) {
+        showToast('Gagal menghapus catatan log.', 'error');
+        return;
+      }
+      await fetchCommitLogsFromDB(state.activeTodoId);
+      showToast('Catatan log dihapus.', 'success');
     }
 
     // MODAL & FORM HANDLERS FOR FOLDER
@@ -1299,49 +1318,51 @@
       const id = document.getElementById('folderEditId').value;
       const name = document.getElementById('folderNameInput').value.trim();
       const icon = document.getElementById('selectedFolderIcon').value;
-      const userId = state.currentUser?.id || 1;
+      const userId = state.currentUser?.id;
 
+      if (!userId) { showToast('Sesi tidak valid, silakan masuk ulang.', 'error'); return; }
+
+      let response;
       if (id) {
-        await safeFetch(`/api/folders/${id}`, {
+        response = await safeFetch(`/api/folders/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: userId, name, icon })
         });
-
-        const folder = state.folders.find(f => f.id == id);
-        if (folder) { folder.name = name; folder.icon = icon; }
       } else {
-        const response = await safeFetch('/api/folders', {
+        response = await safeFetch('/api/folders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: userId, name, icon })
         });
-
-        let newId = Date.now();
-        if (response && response.ok) {
-          const result = await response.json().catch(() => null);
-          if (result?.id) newId = result.id;
-        }
-
-        state.folders.push({ id: newId, name: name, icon: icon });
       }
 
-      saveLocalData();
+      if (!response || !response.ok) {
+        const err = response ? await response.json().catch(() => ({})) : {};
+        showToast(err.error || 'Gagal menyimpan folder.', 'error');
+        return;
+      }
+
       closeFolderModal();
-      renderAll();
+      await fetchFoldersFromDB();
+      showToast('Folder berhasil disimpan.', 'success');
     }
 
     async function deleteFolder(id) {
       if (!confirm('Hapus folder ini? Task yang berada di dalamnya akan otomatis terhapus.')) return;
 
-      await safeFetch(`/api/folders/${id}`, { method: 'DELETE' });
+      const userId = state.currentUser?.id;
+      const response = await safeFetch(`/api/folders/${id}?user_id=${userId}`, { method: 'DELETE' });
 
-      state.folders = state.folders.filter(f => f.id !== id);
-      state.todos = state.todos.filter(t => t.folderId !== id);
+      if (!response || !response.ok) {
+        showToast('Gagal menghapus folder.', 'error');
+        return;
+      }
+
       if (state.selectedFolderId === id) state.selectedFolderId = 'all';
-
-      saveLocalData();
-      renderAll();
+      await fetchFoldersFromDB();
+      await fetchTodosFromDB();
+      showToast('Folder berhasil dihapus.', 'success');
     }
 
     // MODAL & FORM HANDLERS FOR TODO
@@ -1412,11 +1433,13 @@
       const folderId = rawFolderValue ? parseInt(rawFolderValue) : null;
       const icon = document.getElementById('selectedTodoIcon').value;
       const desc = document.getElementById('todoDescInput').value.trim();
-      const userId = state.currentUser?.id || 1;
-      const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+      const userId = state.currentUser?.id;
 
+      if (!userId) { showToast('Sesi tidak valid, silakan masuk ulang.', 'error'); return; }
+
+      let response;
       if (id) {
-        await safeFetch(`/api/todos/${id}`, {
+        response = await safeFetch(`/api/todos/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1427,16 +1450,8 @@
             icon: icon
           })
         });
-
-        const todo = state.todos.find(t => t.id == id);
-        if (todo) {
-          todo.title = title;
-          todo.folderId = folderId;
-          todo.icon = icon;
-          todo.desc = desc;
-        }
       } else {
-        const response = await safeFetch('/api/todos', {
+        response = await safeFetch('/api/todos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1445,36 +1460,24 @@
             title: title,
             description: desc,
             icon: icon,
-            status: 'pending',
-            due_date: now
+            status: 'pending'
           })
-        });
-
-        let newId = Date.now();
-        if (response && response.ok) {
-          const resData = await response.json().catch(() => null);
-          if (resData?.id) newId = resData.id;
-        }
-
-        state.todos.unshift({
-          id: newId,
-          folderId: folderId,
-          icon: icon,
-          title: title,
-          desc: desc,
-          status: 'pending',
-          createdAt: now
         });
       }
 
-      saveLocalData();
+      if (!response || !response.ok) {
+        const err = response ? await response.json().catch(() => ({})) : {};
+        showToast(err.error || 'Gagal menyimpan task.', 'error');
+        return;
+      }
+
       closeTodoModal();
+      await fetchTodosFromDB();
 
       if (state.activeTodoId == id) {
         openTodoDetailScreen(parseInt(id));
-      } else {
-        renderAll();
       }
+      showToast('Task berhasil disimpan.', 'success');
     }
 
     async function toggleTodoStatus(id) {
@@ -1482,12 +1485,18 @@
       if (!todo) return;
 
       const newStatus = todo.status === 'completed' ? 'pending' : 'completed';
+      const userId = state.currentUser?.id;
 
-      await safeFetch(`/api/todos/${id}/status`, {
+      const response = await safeFetch(`/api/todos/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus, user_id: userId })
       });
+
+      if (!response || !response.ok) {
+        showToast('Gagal memperbarui status task.', 'error');
+        return;
+      }
 
       todo.status = newStatus;
       saveLocalData();
@@ -1495,12 +1504,17 @@
     }
 
     async function deleteTodo(id) {
-      await safeFetch(`/api/todos/${id}`, { method: 'DELETE' });
+      const userId = state.currentUser?.id;
+      const response = await safeFetch(`/api/todos/${id}?user_id=${userId}`, { method: 'DELETE' });
 
-      state.todos = state.todos.filter(t => t.id !== id);
+      if (!response || !response.ok) {
+        showToast('Gagal menghapus task.', 'error');
+        return;
+      }
+
       state.commitLogs = state.commitLogs.filter(l => l.todoId !== id);
-      saveLocalData();
-      renderAll();
+      await fetchTodosFromDB();
+      showToast('Task berhasil dihapus.', 'success');
     }
 
     window.onload = async function() {

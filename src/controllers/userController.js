@@ -5,7 +5,9 @@ const UserController = {
   // Proses Register User Baru
   async register(req, res) {
     try {
-      const { display_name, email, password } = req.body;
+      // Terima 'display_name' (backend) maupun 'name' (frontend)
+      const display_name = req.body.display_name || req.body.name;
+      const { email, password } = req.body;
 
       // Validasi input
       if (!display_name || !email || !password) {
@@ -26,7 +28,7 @@ const UserController = {
 
       res.status(201).json({
         message: 'Registrasi berhasil!',
-        user: { id: userId, display_name, email }
+        user: { id: userId, name: display_name, display_name, email }
       });
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -59,6 +61,7 @@ const UserController = {
           message: 'Login berhasil!',
           user: {
             id: user.id,
+            name: user.display_name,
             display_name: user.display_name,
             email: user.email
           }

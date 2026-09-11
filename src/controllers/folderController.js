@@ -31,6 +31,26 @@ const FolderController = {
     }
   },
 
+  // Update folder
+  async updateFolder(req, res) {
+    try {
+      const { id } = req.params;
+      const { user_id, name, icon } = req.body;
+      if (!user_id || !name) {
+        return res.status(400).json({ error: 'user_id dan nama folder wajib diisi.' });
+      }
+
+      const affected = await FolderModel.update(id, user_id, name, icon);
+      if (!affected) {
+        return res.status(404).json({ error: 'Folder tidak ditemukan.' });
+      }
+
+      res.json({ id: Number(id), name, icon: icon || 'fa-folder' });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
   // Hapus folder
   async deleteFolder(req, res) {
     try {

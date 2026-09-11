@@ -48,13 +48,51 @@ const TodoController = {
     }
   },
 
+  async updateTodo(req, res) {
+    try {
+      const { id } = req.params;
+      const { user_id, folder_id, title, description, priority, icon, due_date } = req.body;
+      if (!user_id) {
+        return res.status(400).json({ error: 'user_id wajib diisi.' });
+      }
+
+      const affected = await TodoModel.update(id, user_id, {
+        folder_id: folder_id ?? null,
+        title,
+        description,
+        priority,
+        icon,
+        due_date
+      });
+
+      if (!affected) {
+        return res.status(404).json({ error: 'Task tidak ditemukan.' });
+      }
+
+      res.json({ message: 'Task berhasil diperbarui.' });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
   async toggleTodo(req, res) {
     try {
       const { id } = req.params;
-      const { status } = req.body; // 'pending' atau 'completed'
+      const { status, user_id } = req.body; // 'pending' atau 'completed'
 
-      await TodoModel.updateStatus(id, status);
-      res.json({ message: 'Status task berhasil diperbarui.' });
+      if (!user_id) {
+        return res.status(400).json({ error: 'user_id wajib diisi.' });
+      }
+      if (!['pending', 'completed'].includes(status)) {
+        return res.status(400).json({ error: 'Status tidak valid.' });
+      }
+
+      const affected = await TodoModel.updateStatus(id, user_id, status);
+      if (!affected) {
+        return res.status(404).json({ error: 'Task tidak ditemukan.' });
+      }
+
+      res.json({ message: 'Status task berhasil diperbarui.', status });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -63,7 +101,16 @@ const TodoController = {
   async deleteTodo(req, res) {
     try {
       const { id } = req.params;
-      await TodoModel.delete(id);
+      const { user_id } = req.query;
+      if (!user_id) {
+        return res.status(400).json({ error: 'user_id wajib disertakan.' });
+      }
+
+      const affected = await TodoModel.delete(id, user_id);
+      if (!affected) {
+        return res.status(404).json({ error: 'Task tidak ditemukan.' });
+      }
+
       res.json({ message: 'Task berhasil dihapus.' });
     } catch (error) {
       res.status(500).json({ error: error.message });

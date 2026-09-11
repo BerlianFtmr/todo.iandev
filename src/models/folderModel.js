@@ -19,6 +19,15 @@ const FolderModel = {
     return result.insertId;
   },
 
+  // Update folder berdasarkan ID
+  async update(id, userId, name, icon) {
+    const [result] = await db.execute(
+      'UPDATE folders SET name = ?, icon = ? WHERE id = ? AND user_id = ?',
+      [name, icon || 'fa-folder', id, userId]
+    );
+    return result.affectedRows;
+  },
+
   // Hapus folder berdasarkan ID
   async delete(id) {
     await db.execute('DELETE FROM folders WHERE id = ?', [id]);
