@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="sky">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FocusDo - Todo List & Progress Tracker SPA</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome v6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            lavender: {
+              50: 'rgb(var(--c-50) / <alpha-value>)',
+              100: 'rgb(var(--c-100) / <alpha-value>)',
+              200: 'rgb(var(--c-200) / <alpha-value>)',
+              300: 'rgb(var(--c-300) / <alpha-value>)',
+              400: 'rgb(var(--c-400) / <alpha-value>)',
+              500: 'rgb(var(--c-500) / <alpha-value>)',
+              600: 'rgb(var(--c-600) / <alpha-value>)',
+              700: 'rgb(var(--c-700) / <alpha-value>)',
+              800: 'rgb(var(--c-800) / <alpha-value>)',
+              900: 'rgb(var(--c-900) / <alpha-value>)',
+              950: 'rgb(var(--c-950) / <alpha-value>)',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Default Theme: Blue Sky */
+    :root, [data-theme="sky"] {
+      --c-50: 240 249 255;
+      --c-100: 224 242 254;
+      --c-200: 186 230 253;
+      --c-300: 125 211 252;
+      --c-400: 56 189 248;
+      --c-500: 14 165 233;
+      --c-600: 2 132 199;
+      --c-700: 3 105 161;
+      --c-800: 7 89 133;
+      --c-900: 12 74 110;
+      --c-950: 8 47 73;
+    }
+
+    /* Lavender Theme */
+    [data-theme="lavender"] {
+      --c-50: 248 245 255;
+      --c-100: 240 232 255;
+      --c-200: 225 212 254;
+      --c-300: 203 175 253;
+      --c-400: 176 126 251;
+      --c-500: 149 75 248;
+      --c-600: 129 40 237;
+      --c-700: 111 25 212;
+      --c-800: 92 23 173;
+      --c-900: 76 21 139;
+      --c-950: 48 8 98;
+    }
+
+    /* Emerald Breeze Theme */
+    [data-theme="emerald"] {
+      --c-50: 236 253 245;
+      --c-100: 209 250 229;
+      --c-200: 167 243 208;
+      --c-300: 110 231 183;
+      --c-400: 52 211 153;
+      --c-500: 16 185 129;
+      --c-600: 5 150 105;
+      --c-700: 4 120 87;
+      --c-800: 6 95 70;
+      --c-900: 6 78 59;
+      --c-950: 2 44 34;
+    }
+
+    /* Rose Sunset Theme */
+    [data-theme="rose"] {
+      --c-50: 255 241 242;
+      --c-100: 255 228 230;
+      --c-200: 254 205 211;
+      --c-300: 253 164 175;
+      --c-400: 251 113 133;
+      --c-500: 244 63 94;
+      --c-600: 225 29 72;
+      --c-700: 190 18 60;
+      --c-800: 159 18 57;
+      --c-900: 136 19 55;
+      --c-950: 76 5 25;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: rgb(var(--c-50));
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgb(var(--c-100));
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgb(var(--c-300));
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="text-slate-700 min-h-screen flex flex-col antialiased">
+
+  <div id="app" class="min-h-screen flex flex-col">
+
+    <!-- ========================================== -->
+    <!-- VIEW 1: LOGIN & REGISTER PAGE              -->
+    <!-- ========================================== -->
+    <div id="loginView" class="relative min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-lavender-100 via-white to-lavender-50">
+      
+      <!-- Theme Switcher Top Right -->
+      <div class="absolute top-4 right-4 flex items-center gap-1.5 bg-white/80 backdrop-blur-md p-1.5 rounded-2xl border border-lavender-100 shadow-sm">
+        <span class="text-xs font-semibold text-slate-500 px-2 flex items-center gap-1">
+          <i class="fa-solid fa-palette text-lavender-600"></i> Tema:
+        </span>
+        <button onclick="switchTheme('sky')" title="Blue Sky" class="w-7 h-7 rounded-full bg-[#0284c7] border-2 border-white shadow hover:scale-110 transition"></button>
+        <button onclick="switchTheme('lavender')" title="Lavender Mist" class="w-7 h-7 rounded-full bg-[#8128ed] border-2 border-white shadow hover:scale-110 transition"></button>
+        <button onclick="switchTheme('emerald')" title="Emerald Breeze" class="w-7 h-7 rounded-full bg-[#059669] border-2 border-white shadow hover:scale-110 transition"></button>
+        <button onclick="switchTheme('rose')" title="Rose Sunset" class="w-7 h-7 rounded-full bg-[#e11d48] border-2 border-white shadow hover:scale-110 transition"></button>
+      </div>
+
+      <div class="w-full max-w-md bg-white rounded-2xl shadow-xl shadow-lavender-200/50 border border-lavender-100 p-8">
+        <div class="text-center mb-6">
+          <div class="w-16 h-16 bg-lavender-100 text-lavender-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl shadow-inner">
+            <i class="fa-solid fa-list-check"></i>
+          </div>
+          <h1 class="text-2xl font-bold text-slate-800">FocusDo</h1>
+          <p class="text-sm text-slate-500 mt-1">Kelola tugas dan catat progress harianmu</p>
+        </div>
+
+        <!-- Tab Toggle Login vs Register -->
+        <div class="flex bg-slate-100 p-1 rounded-xl mb-6 border border-slate-200/60">
+          <button id="tabLogin" onclick="switchAuthTab('login')" class="w-1/2 py-2 text-xs font-bold rounded-lg bg-lavender-600 text-white shadow transition">
+            Masuk
+          </button>
+          <button id="tabRegister" onclick="switchAuthTab('register')" class="w-1/2 py-2 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition">
+            Daftar Akun
+          </button>
+        </div>
+
+        <!-- FORM LOGIN -->
+        <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+              <i class="fa-regular fa-envelope mr-1 text-lavender-500"></i> Email
+            </label>
+            <input 
+              type="email" 
+              id="loginEmail" 
+              required 
+              placeholder="nama@email.com"
+              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-lavender-400 transition"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+              <i class="fa-solid fa-lock mr-1 text-lavender-500"></i> Kata Sandi
+            </label>
+            <input 
+              type="password" 
+              id="loginPassword" 
+              required 
+              placeholder="••••••••"
+              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-lavender-400 transition"
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            class="w-full bg-lavender-600 hover:bg-lavender-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-lavender-500/25 transition transform active:scale-[0.98] flex items-center justify-center gap-2 text-sm mt-2"
+          >
+            <span>Masuk ke Dashboard</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </form>
+
+        <!-- FORM REGISTER -->
+        <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+              <i class="fa-regular fa-user mr-1 text-lavender-500"></i> Nama Lengkap
+            </label>
+            <input 
+              type="text" 
+              id="regName" 
+              required 
+              placeholder="Contoh: Budi Santoso"
+              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-lavender-400 transition"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+              <i class="fa-regular fa-envelope mr-1 text-lavender-500"></i> Email
+            </label>
+            <input 
+              type="email" 
+              id="regEmail" 
+              required 
+              placeholder="nama@email.com"
+              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-lavender-400 transition"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+              <i class="fa-solid fa-lock mr-1 text-lavender-500"></i> Kata Sandi
+            </label>
+            <input 
+              type="password" 
+              id="regPassword" 
+              required 
+              placeholder="Minimal 6 karakter"
+              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-lavender-400 transition"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+              <i class="fa-solid fa-shield-halved mr-1 text-lavender-500"></i> Konfirmasi Kata Sandi
+            </label>
+            <input 
+              type="password" 
+              id="regConfirmPassword" 
+              required 
+              placeholder="Ulangi kata sandi"
+              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-lavender-400 transition"
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            class="w-full bg-lavender-600 hover:bg-lavender-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-lavender-500/25 transition transform active:scale-[0.98] flex items-center justify-center gap-2 text-sm mt-2"
+          >
+            <span>Daftar Akun Baru</span>
+            <i class="fa-solid fa-user-plus text-xs"></i>
+          </button>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW 2: DASHBOARD PAGE                     -->
+    <!-- ========================================== -->
+    <div id="dashboardView" class="hidden min-h-screen flex flex-col md:flex-row bg-slate-50">
+
+      <!-- SIDEBAR -->
+      <aside class="w-full md:w-72 bg-white border-r border-lavender-100 flex flex-col shrink-0">
+        <div class="p-5 border-b border-lavender-100 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-lavender-100 text-lavender-600 rounded-xl flex items-center justify-center text-lg font-bold shadow-sm">
+              <i class="fa-solid fa-list-check"></i>
+            </div>
+            <div>
+              <h2 class="font-bold text-slate-800 text-base leading-tight">FocusDo</h2>
+              <span id="activeThemeBadge" class="text-xs text-lavender-600 font-medium bg-lavender-50 px-2 py-0.5 rounded-full border border-lavender-100 inline-flex items-center gap-1">
+                <i class="fa-solid fa-cloud-sun"></i> Blue Sky Theme
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 flex-1 overflow-y-auto space-y-6">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 px-3">Menu Utama</div>
+            <nav class="space-y-1">
+              <button 
+                onclick="selectFolder('all')" 
+                id="folder-nav-all"
+                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition bg-lavender-100 text-lavender-900 font-semibold"
+              >
+                <div class="flex items-center gap-3">
+                  <i class="fa-solid fa-layer-group text-lavender-600 w-5"></i>
+                  <span>Semua Task</span>
+                </div>
+                <span id="badge-all-count" class="bg-white text-lavender-700 text-xs px-2 py-0.5 rounded-full font-bold shadow-sm">0</span>
+              </button>
+            </nav>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-2 px-3">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Folder Saya</span>
+              <button onclick="openAddFolderModal()" class="text-xs text-lavender-600 hover:text-lavender-800 hover:bg-lavender-50 p-1.5 rounded-lg transition">
+                <i class="fa-solid fa-plus mr-1"></i> Tambah
+              </button>
+            </div>
+            <nav id="folderListContainer" class="space-y-1"></nav>
+          </div>
+        </div>
+
+        <div class="p-4 border-t border-lavender-100 bg-lavender-50/50 flex items-center justify-between">
+          <div class="flex items-center gap-3 truncate">
+            <div class="w-9 h-9 bg-lavender-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow">
+              <i class="fa-solid fa-user"></i>
+            </div>
+            <div class="truncate">
+              <p class="text-xs font-bold text-slate-800 truncate" id="userDisplayName">-</p>
+              <p class="text-[11px] text-slate-500 truncate" id="userDisplayEmail">-</p>
+            </div>
+          </div>
+          <button onclick="handleLogout()" class="text-slate-400 hover:text-rose-600 p-2 rounded-lg hover:bg-rose-50 transition" title="Keluar">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <header class="bg-white border-b border-lavender-100 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2" id="currentFolderTitle">
+              <i class="fa-solid fa-layer-group text-lavender-600"></i>
+              <span>Semua Task</span>
+            </h1>
+            <p class="text-xs text-slate-500 mt-0.5" id="currentFolderDesc">Menampilkan semua tugas dari seluruh folder</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+              <span class="text-xs font-semibold text-slate-500 px-1 hidden sm:inline-flex items-center gap-1">
+                <i class="fa-solid fa-palette text-lavender-600"></i> Tema:
+              </span>
+              <button onclick="switchTheme('sky')" class="theme-btn-sky px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 shadow-sm">
+                <span class="w-3 h-3 rounded-full bg-[#0284c7]"></span>
+                <span class="hidden sm:inline">Blue Sky</span>
+              </button>
+              <button onclick="switchTheme('lavender')" class="theme-btn-lavender px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-600 hover:bg-slate-100">
+                <span class="w-3 h-3 rounded-full bg-[#8128ed]"></span>
+                <span class="hidden sm:inline">Lavender</span>
+              </button>
+              <button onclick="switchTheme('emerald')" class="theme-btn-emerald px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-600 hover:bg-slate-100">
+                <span class="w-3 h-3 rounded-full bg-[#059669]"></span>
+                <span class="hidden sm:inline">Emerald</span>
+              </button>
+              <button onclick="switchTheme('rose')" class="theme-btn-rose px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-600 hover:bg-slate-100">
+                <span class="w-3 h-3 rounded-full bg-[#e11d48]"></span>
+                <span class="hidden sm:inline">Rose</span>
+              </button>
+            </div>
+
+            <button onclick="openAddTodoModal()" class="bg-lavender-600 hover:bg-lavender-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-lavender-500/20 transition flex items-center gap-2 active:scale-95">
+              <i class="fa-solid fa-circle-plus"></i>
+              <span>Task Baru</span>
+            </button>
+          </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+            <div class="flex gap-2">
+              <button onclick="setFilter('all')" id="filter-all" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-lavender-600 text-white shadow-sm flex items-center gap-1.5">Semua</button>
+              <button onclick="setFilter('pending')" id="filter-pending" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:bg-lavender-100 transition flex items-center gap-1.5">Sedang Jalan</button>
+              <button onclick="setFilter('completed')" id="filter-completed" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:bg-lavender-100 transition flex items-center gap-1.5">Selesai</button>
+            </div>
+            <span class="text-xs text-slate-400" id="todoCountLabel">0 Task</span>
+          </div>
+
+          <div id="todoGrid" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+        </div>
+      </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW 3: FULL SCREEN DETAIL TASK PAGE (SPA) -->
+    <!-- ========================================== -->
+    <div id="detailScreenView" class="hidden min-h-screen flex flex-col bg-slate-50">
+      
+      <!-- Top Navigation Header -->
+      <header class="bg-white border-b border-lavender-100 px-6 py-4 flex items-center justify-between">
+        <button 
+          onclick="backToDashboard()" 
+          class="text-xs font-semibold text-slate-700 hover:text-lavender-700 bg-slate-100 hover:bg-lavender-100 px-4 py-2 rounded-xl transition flex items-center gap-2"
+        >
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Kembali ke Dashboard</span>
+        </button>
+
+        <div class="flex items-center gap-2">
+          <span id="screenDetailFolderBadge" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-lavender-50 text-lavender-700 border border-lavender-200 flex items-center gap-1.5 shadow-sm"></span>
+          <span id="screenDetailStatusBadge" class="text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5"></span>
+        </div>
+      </header>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 max-w-6xl w-full mx-auto p-6 space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          
+          <!-- LEFT COLUMN: Task Info -->
+          <div class="bg-white rounded-2xl border border-lavender-100 p-6 shadow-sm space-y-5 lg:col-span-1">
+            <div class="flex items-start gap-3.5">
+              <div class="w-12 h-12 rounded-2xl bg-lavender-100 text-lavender-600 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+                <i id="screenDetailIcon" class="fa-solid fa-list-check"></i>
+              </div>
+              <div>
+                <h1 id="screenDetailTitle" class="text-xl font-bold text-slate-800 leading-snug"></h1>
+                <p class="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
+                  <i class="fa-regular fa-clock"></i> Dibuat: <span id="screenDetailDate"></span>
+                </p>
+              </div>
+            </div>
+
+            <hr class="border-slate-100">
+
+            <div>
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                <i class="fa-solid fa-align-left text-lavender-500"></i> Deskripsi Task
+              </h4>
+              <p id="screenDetailDesc" class="text-xs md:text-sm text-slate-700 bg-slate-50 border border-slate-200/80 rounded-xl p-4 leading-relaxed whitespace-pre-line"></p>
+            </div>
+
+            <div class="space-y-2 pt-2">
+              <button id="screenDetailToggleBtn" class="w-full py-2.5 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-2 active:scale-95 shadow-sm"></button>
+
+              <div class="grid grid-cols-2 gap-2">
+                <button id="screenDetailEditBtn" class="py-2 text-xs font-semibold bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm">
+                  <i class="fa-solid fa-pen-to-square text-lavender-600"></i> Edit Task
+                </button>
+                <button id="screenDetailDeleteBtn" class="py-2 text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl transition flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-trash"></i> Hapus Task
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: Timeline Progress Commit -->
+          <div class="bg-white rounded-2xl border border-lavender-100 p-6 shadow-sm space-y-5 lg:col-span-2">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                <i class="fa-solid fa-code-commit text-lavender-600"></i>
+                <span>Progress Commit Tracker</span>
+              </h3>
+              <span id="screenDetailLogCountBadge" class="text-xs bg-lavender-50 text-lavender-700 border border-lavender-200 px-3 py-1 rounded-full font-semibold">
+                0 Catatan Progress
+              </span>
+            </div>
+
+            <div class="bg-lavender-50/70 border border-lavender-100 rounded-2xl p-4 space-y-3">
+              <label class="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-plus-circle text-lavender-600"></i>
+                <span>Tambah Catatan Progress / Update Baru</span>
+              </label>
+              <textarea 
+                id="screenDetailCommitMsgInput" 
+                rows="3" 
+                placeholder="Tuliskan detail progress yang baru diselesaikan..." 
+                class="w-full px-4 py-3 bg-white border border-lavender-200 rounded-xl text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-lavender-400"
+              ></textarea>
+              <div class="flex justify-end">
+                <button 
+                  onclick="handleAddScreenCommitLog()" 
+                  class="bg-lavender-600 hover:bg-lavender-700 text-white text-xs font-semibold px-5 py-2.5 rounded-xl shadow-md shadow-lavender-500/20 flex items-center gap-2 transition active:scale-95"
+                >
+                  <i class="fa-solid fa-check"></i>
+                  <span>Simpan Progress Commit</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="pt-2">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
+                Histori Catatan Progress
+              </h4>
+              <div id="screenDetailTimelineContainer"></div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+
+  </div>
+
+  <!-- MODAL: TAMBAH / EDIT FOLDER -->
+  <div id="folderModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl border border-lavender-100 overflow-hidden">
+      <div class="bg-lavender-50 px-6 py-4 border-b border-lavender-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2" id="folderModalTitle">
+          <i class="fa-solid fa-folder-plus text-lavender-600"></i> Tambah Folder Baru
+        </h3>
+        <button onclick="closeFolderModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleSaveFolder(event)" class="p-6 space-y-4">
+        <input type="hidden" id="folderEditId">
+        
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nama Folder</label>
+          <input type="text" id="folderNameInput" required placeholder="Contoh: Kuliah, Latihan, Proyek" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lavender-400 text-sm"/>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Ikon Folder</label>
+          <div class="grid grid-cols-6 gap-2" id="iconPickerContainer"></div>
+          <input type="hidden" id="selectedFolderIcon" value="fa-folder">
+        </div>
+
+        <div class="pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeFolderModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">Batal</button>
+          <button type="submit" class="px-5 py-2 text-xs font-semibold bg-lavender-600 hover:bg-lavender-700 text-white rounded-xl shadow transition">Simpan Folder</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: TAMBAH / EDIT TODO -->
+  <div id="todoModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-lavender-100 overflow-hidden">
+      <div class="bg-lavender-50 px-6 py-4 border-b border-lavender-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2" id="todoModalTitle">
+          <i class="fa-solid fa-square-plus text-lavender-600"></i> Buat Task Baru
+        </h3>
+        <button onclick="closeTodoModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleSaveTodo(event)" class="p-6 space-y-4">
+        <input type="hidden" id="todoEditId">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Judul Task / Todo</label>
+          <input type="text" id="todoTitleInput" required placeholder="Contoh: Selesaikan Tugas Makalah Bab 1" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lavender-400 text-sm"/>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Kategori / Folder</label>
+          <select id="todoFolderSelect" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lavender-400 text-sm"></select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Ikon Task</label>
+          <div class="grid grid-cols-8 gap-2" id="todoIconPickerContainer"></div>
+          <input type="hidden" id="selectedTodoIcon" value="fa-list-check">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Deskripsi Singkat</label>
+          <textarea id="todoDescInput" rows="3" placeholder="Tambahkan detail ringkas mengenai tugas ini..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lavender-400 text-sm"></textarea>
+        </div>
+
+        <div class="pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeTodoModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">Batal</button>
+          <button type="submit" class="px-5 py-2 text-xs font-semibold bg-lavender-600 hover:bg-lavender-700 text-white rounded-xl shadow transition">Simpan Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // GLOBAL STATE MANAGEMENT
+    const THEMES = {
+      sky: { name: 'Blue Sky', badge: 'Blue Sky Theme', icon: 'fa-cloud-sun' },
+      lavender: { name: 'Lavender Mist', badge: 'Lavender Theme', icon: 'fa-droplet' },
+      emerald: { name: 'Emerald Breeze', badge: 'Emerald Theme', icon: 'fa-leaf' },
+      rose: { name: 'Rose Sunset', badge: 'Rose Theme', icon: 'fa-heart' }
+    };
+
+    let state = {
+      currentTheme: 'sky',
+      currentUser: null,
+      selectedFolderId: 'all',
+      currentFilter: 'all',
+      activeTodoId: null,
+
+      users: [],
+      folders: [],
+      todos: [],
+      commitLogs: []
+    };
+
+    const ICON_LIST = ['fa-folder', 'fa-graduation-cap', 'fa-code', 'fa-book', 'fa-dumbbell', 'fa-briefcase', 'fa-heart', 'fa-layer-group', 'fa-laptop-code', 'fa-pen-nib', 'fa-list-check', 'fa-star'];
+    const TASK_ICON_LIST = ['fa-list-check', 'fa-book', 'fa-code', 'fa-laptop-code', 'fa-pen-nib', 'fa-graduation-cap', 'fa-fire', 'fa-rocket', 'fa-lightbulb', 'fa-dumbbell', 'fa-star', 'fa-flag', 'fa-bell', 'fa-calendar-check', 'fa-bullseye', 'fa-heart'];
+
+    // THEME SWITCHER
+    function switchTheme(themeKey) {
+      if (!THEMES[themeKey]) return;
+      state.currentTheme = themeKey;
+      document.documentElement.setAttribute('data-theme', themeKey);
+      
+      // Simpan pilihan tema ke localStorage
+      localStorage.setItem('user_theme', themeKey);
+      
+      const themeInfo = THEMES[themeKey];
+      const badgeEl = document.getElementById('activeThemeBadge');
+      if (badgeEl) {
+        badgeEl.innerHTML = `<i class="fa-solid ${themeInfo.icon}"></i> ${themeInfo.badge}`;
+      }
+
+      Object.keys(THEMES).forEach(key => {
+        const btns = document.querySelectorAll(`.theme-btn-${key}`);
+        btns.forEach(btn => {
+          btn.className = (key === themeKey) 
+            ? `theme-btn-${key} px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-white border border-slate-200 text-slate-800 shadow-sm`
+            : `theme-btn-${key} px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-500 hover:bg-slate-100`;
+        });
+      });
+    }
+
+    // AUTH SWITCH TAB & HANDLERS
+    function switchAuthTab(tab) {
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      const tabLogin = document.getElementById('tabLogin');
+      const tabRegister = document.getElementById('tabRegister');
+
+      if (tab === 'login') {
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+        tabLogin.className = "w-1/2 py-2 text-xs font-bold rounded-lg bg-lavender-600 text-white shadow transition";
+        tabRegister.className = "w-1/2 py-2 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition";
+      } else {
+        loginForm.classList.add('hidden');
+        registerForm.classList.remove('hidden');
+        tabRegister.className = "w-1/2 py-2 text-xs font-bold rounded-lg bg-lavender-600 text-white shadow transition";
+        tabLogin.className = "w-1/2 py-2 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition";
+      }
+    }
+
+  function handleRegister(e) {
+    e.preventDefault();
+    const name = document.getElementById('regName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+    if (password !== confirmPassword) {
+      alert('Konfirmasi kata sandi tidak cocok!');
+      return;
+    }
+
+    const existingUser = state.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (existingUser) {
+      alert('Email ini sudah terdaftar! Silakan langsung login.');
+      return;
+    }
+
+    // Tambahkan 'id' berbasis timestamp di sini
+    state.users.push({ 
+      id: Date.now(), 
+      name: name, 
+      email: email, 
+      password: password 
+    });
+
+    alert('Pendaftaran berhasil! Silakan masuk dengan akun baru kamu.');
+    
+    document.getElementById('loginEmail').value = email;
+    document.getElementById('loginPassword').value = password;
+    switchAuthTab('login');
+  }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      const user = state.users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+
+      if (!user) {
+        alert('Email atau kata sandi salah! Pastikan kamu sudah mendaftar.');
+        return;
+      }
+
+      state.currentUser = user;
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('dashboardView').classList.remove('hidden');
+      document.getElementById('userDisplayName').innerText = state.currentUser.name;
+
+      renderFolders(); 
+      fetchTodosFromDB();
+    }
+
+    function handleLogout() {
+      state.currentUser = null;
+      document.getElementById('dashboardView').classList.add('hidden');
+      document.getElementById('detailScreenView').classList.add('hidden');
+      document.getElementById('loginView').classList.remove('hidden');
+    }
+
+    // RENDER FUNCTIONS
+    function renderAll() {
+      renderFolders();
+      renderTodos();
+    }
+
+    function renderFolders() {
+      const container = document.getElementById('folderListContainer');
+      container.innerHTML = '';
+
+      state.folders.forEach(folder => {
+        const count = state.todos.filter(t => t.folderId === folder.id).length;
+        const isActive = state.selectedFolderId === folder.id;
+
+        const btn = document.createElement('div');
+        btn.className = `group flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer ${
+          isActive ? 'bg-lavender-100 text-lavender-900 font-semibold shadow-sm' : 'text-slate-600 hover:bg-slate-100'
+        }`;
+        btn.onclick = () => selectFolder(folder.id);
+
+        btn.innerHTML = `
+          <div class="flex items-center gap-3 truncate">
+            <i class="fa-solid ${folder.icon} text-lavender-600 w-5"></i>
+            <span class="truncate">${folder.name}</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs ${isActive ? 'bg-white text-lavender-700 font-bold' : 'bg-slate-100 text-slate-500'} px-2 py-0.5 rounded-full">
+              ${count}
+            </span>
+            <button onclick="event.stopPropagation(); editFolder(${folder.id})" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-lavender-700 p-1 transition">
+              <i class="fa-solid fa-pen-to-square text-xs"></i>
+            </button>
+            <button onclick="event.stopPropagation(); deleteFolder(${folder.id})" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 p-1 transition">
+              <i class="fa-solid fa-trash text-xs"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(btn);
+      });
+
+      document.getElementById('badge-all-count').innerText = state.todos.length;
+    }
+
+    // RENDER TODOS WITH FIXED CHECKBOX LOGIC
+    function renderTodos() {
+      const grid = document.getElementById('todoGrid');
+      grid.innerHTML = '';
+
+      let filtered = state.todos;
+      if (state.selectedFolderId !== 'all') {
+        filtered = filtered.filter(t => t.folderId === state.selectedFolderId);
+      }
+
+      if (state.currentFilter === 'pending') {
+        filtered = filtered.filter(t => t.status === 'pending');
+      } else if (state.currentFilter === 'completed') {
+        filtered = filtered.filter(t => t.status === 'completed');
+      }
+
+      document.getElementById('todoCountLabel').innerText = `${filtered.length} Task Ditemukan`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full py-12 text-center bg-white rounded-2xl border border-dashed border-lavender-200 p-8">
+            <div class="w-12 h-12 bg-lavender-50 text-lavender-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+              <i class="fa-solid fa-clipboard-list"></i>
+            </div>
+            <h4 class="font-bold text-slate-700 mb-1">Belum Ada Task</h4>
+            <p class="text-xs text-slate-400">Klik tombol "Task Baru" di atas untuk menambahkan tugas.</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(todo => {
+        const folder = state.folders.find(f => f.id === todo.folderId);
+        const folderName = folder ? folder.name : 'Umum';
+        const folderIcon = folder ? folder.icon : 'fa-folder';
+        const logCount = state.commitLogs.filter(l => l.todoId === todo.id).length;
+
+        const card = document.createElement('div');
+        card.className = `bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between cursor-pointer group border-lavender-100 hover:border-lavender-300 ${
+          todo.status === 'completed' ? 'bg-emerald-50/20 border-emerald-200' : ''
+        }`;
+
+        card.onclick = () => openTodoDetailScreen(todo.id);
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <span class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-lavender-50 text-lavender-700 border border-lavender-100 flex items-center gap-1.5">
+                <i class="fa-solid ${folderIcon}"></i> ${folderName}
+              </span>
+              <span class="text-xs font-semibold px-2.5 py-1 rounded-lg ${
+                todo.status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-50 text-amber-700 border border-amber-200'
+              }">
+                ${todo.status === 'completed' ? '<i class="fa-solid fa-circle-check"></i> Selesai' : '<i class="fa-solid fa-spinner fa-spin"></i> Sedang Jalan'}
+              </span>
+            </div>
+
+            <div class="flex items-start gap-3 mb-2">
+              <!-- CHECKBOX FIXED HERE -->
+              <button 
+                onclick="event.stopPropagation(); toggleTodoStatus(${todo.id})"
+                class="mt-0.5 shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition ${
+                  todo.status === 'completed' ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white hover:border-emerald-500'
+                }"
+              >
+                ${todo.status === 'completed' ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
+              </button>
+              <div class="flex-1 min-w-0">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2 group-hover:text-lavender-700 transition ${todo.status === 'completed' ? 'line-through text-slate-400' : ''}">
+                  <i class="fa-solid ${todo.icon || 'fa-list-check'} text-lavender-600 shrink-0 text-sm"></i>
+                  <span>${todo.title}</span>
+                </h3>
+                <p class="text-xs text-slate-500 mt-1 line-clamp-2">${todo.desc || 'Tidak ada deskripsi'}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between mt-3">
+            <span class="text-[11px] text-slate-400 font-medium"><i class="fa-regular fa-clock"></i> ${todo.createdAt}</span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs bg-lavender-50 text-lavender-700 border border-lavender-200 font-semibold px-2.5 py-1 rounded-xl flex items-center gap-1">
+                <i class="fa-solid fa-code-commit text-lavender-600"></i> ${logCount} Log
+              </span>
+            </div>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    // FULL SCREEN DETAIL VIEW (SPA)
+    function openTodoDetailScreen(todoId) {
+      state.activeTodoId = todoId;
+      const todo = state.todos.find(t => t.id === todoId);
+      if (!todo) return;
+
+      const folder = state.folders.find(f => f.id === todo.folderId);
+
+      document.getElementById('screenDetailFolderBadge').innerHTML = `<i class="fa-solid ${folder ? folder.icon : 'fa-folder'}"></i> ${folder ? folder.name : 'Umum'}`;
+      
+      const statusBadge = document.getElementById('screenDetailStatusBadge');
+      if (todo.status === 'completed') {
+        statusBadge.className = 'text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1.5';
+        statusBadge.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> Selesai`;
+      } else {
+        statusBadge.className = 'text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1.5';
+        statusBadge.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-amber-500"></i> Sedang Jalan`;
+      }
+
+      document.getElementById('screenDetailIcon').className = `fa-solid ${todo.icon || 'fa-list-check'}`;
+      document.getElementById('screenDetailTitle').innerText = todo.title;
+      document.getElementById('screenDetailDate').innerText = todo.createdAt;
+      document.getElementById('screenDetailDesc').innerText = todo.desc || 'Tidak ada deskripsi rincian.';
+
+      const toggleBtn = document.getElementById('screenDetailToggleBtn');
+      if (todo.status === 'completed') {
+        toggleBtn.className = 'w-full py-2.5 text-xs font-semibold rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition flex items-center justify-center gap-2 shadow-sm';
+        toggleBtn.innerHTML = `<i class="fa-solid fa-rotate-left"></i> Tandai Sedang Jalan`;
+      } else {
+        toggleBtn.className = 'w-full py-2.5 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center justify-center gap-2 transition';
+        toggleBtn.innerHTML = `<i class="fa-solid fa-check-double"></i> Tandai Selesai`;
+      }
+      toggleBtn.onclick = () => {
+        toggleTodoStatus(todo.id);
+        openTodoDetailScreen(todo.id);
+      };
+
+      document.getElementById('screenDetailEditBtn').onclick = () => {
+        backToDashboard();
+        editTodo(todo.id);
+      };
+
+      document.getElementById('screenDetailDeleteBtn').onclick = () => {
+        deleteTodo(todo.id);
+        backToDashboard();
+      };
+
+      renderScreenCommitLogs();
+
+      document.getElementById('dashboardView').classList.add('hidden');
+      document.getElementById('detailScreenView').classList.remove('hidden');
+    }
+
+    function backToDashboard() {
+      document.getElementById('detailScreenView').classList.add('hidden');
+      document.getElementById('dashboardView').classList.remove('hidden');
+      renderAll();
+    }
+
+    function renderScreenCommitLogs() {
+      const container = document.getElementById('screenDetailTimelineContainer');
+      container.innerHTML = '';
+
+      const logs = state.commitLogs.filter(l => l.todoId === state.activeTodoId);
+      document.getElementById('screenDetailLogCountBadge').innerText = `${logs.length} Catatan Progress`;
+
+      if (logs.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-10 bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-6 text-slate-400 text-xs">
+            <i class="fa-solid fa-timeline text-3xl text-lavender-300 mb-2 block"></i>
+            Belum ada histori progress. Tambahkan catatan di atas untuk melacak perkembangan task kamu!
+          </div>
+        `;
+        return;
+      }
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'relative border-l-2 border-lavender-200 ml-4 space-y-6';
+
+      logs.forEach(log => {
+        const item = document.createElement('div');
+        item.className = 'relative pl-6 group';
+
+        item.innerHTML = `
+          <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-lavender-600 border-2 border-white shadow"></div>
+          
+          <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm hover:border-lavender-300 transition space-y-2">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span class="font-semibold text-lavender-700 flex items-center gap-1.5">
+                <i class="fa-regular fa-clock"></i> ${log.createdAt}
+              </span>
+              <button onclick="deleteScreenCommitLog(${log.id})" class="text-slate-300 hover:text-rose-600 transition" title="Hapus catatan">
+                <i class="fa-solid fa-trash text-xs"></i>
+              </button>
+            </div>
+            <p class="text-xs md:text-sm text-slate-700 leading-relaxed font-mono bg-slate-50 p-3 rounded-xl border border-slate-100">
+              ${log.message}
+            </p>
+          </div>
+        `;
+
+        wrapper.appendChild(item);
+      });
+
+      container.appendChild(wrapper);
+    }
+
+    function handleAddScreenCommitLog() {
+      const input = document.getElementById('screenDetailCommitMsgInput');
+      const text = input.value.trim();
+      if (!text || !state.activeTodoId) return;
+
+      const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+
+      state.commitLogs.unshift({
+        id: Date.now(),
+        todoId: state.activeTodoId,
+        message: text,
+        createdAt: now
+      });
+
+      input.value = '';
+      renderScreenCommitLogs();
+    }
+
+    function deleteScreenCommitLog(logId) {
+      state.commitLogs = state.commitLogs.filter(l => l.id !== logId);
+      renderScreenCommitLogs();
+    }
+
+    // FOLDER CRUD
+    function selectFolder(id) {
+      state.selectedFolderId = id;
+      renderAll();
+    }
+
+    function openAddFolderModal() {
+      document.getElementById('folderEditId').value = '';
+      document.getElementById('folderNameInput').value = '';
+      document.getElementById('folderModalTitle').innerText = 'Tambah Folder Baru';
+      renderIconPicker('fa-folder');
+      document.getElementById('folderModal').classList.remove('hidden');
+    }
+
+    function editFolder(id) {
+      const f = state.folders.find(item => item.id === id);
+      if (!f) return;
+      document.getElementById('folderEditId').value = f.id;
+      document.getElementById('folderNameInput').value = f.name;
+      document.getElementById('folderModalTitle').innerText = 'Edit Folder';
+      renderIconPicker(f.icon);
+      document.getElementById('folderModal').classList.remove('hidden');
+    }
+
+    function closeFolderModal() {
+      document.getElementById('folderModal').classList.add('hidden');
+    }
+
+    function renderIconPicker(selectedIcon) {
+      const container = document.getElementById('iconPickerContainer');
+      container.innerHTML = '';
+      ICON_LIST.forEach(icon => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `p-2.5 rounded-xl border text-center transition ${
+          icon === selectedIcon ? 'bg-lavender-600 text-white border-lavender-600' : 'bg-slate-50 text-slate-600 border-slate-200'
+        }`;
+        btn.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+        btn.onclick = () => {
+          document.getElementById('selectedFolderIcon').value = icon;
+          renderIconPicker(icon);
+        };
+        container.appendChild(btn);
+      });
+      document.getElementById('selectedFolderIcon').value = selectedIcon;
+    }
+
+    function handleSaveFolder(e) {
+      e.preventDefault();
+      const id = document.getElementById('folderEditId').value;
+      const name = document.getElementById('folderNameInput').value.trim();
+      const icon = document.getElementById('selectedFolderIcon').value;
+
+      if (id) {
+        const folder = state.folders.find(f => f.id == id);
+        if (folder) { folder.name = name; folder.icon = icon; }
+      } else {
+        state.folders.push({ id: Date.now(), name: name, icon: icon });
+      }
+
+      closeFolderModal();
+      renderAll();
+    }
+
+    function deleteFolder(id) {
+      state.folders = state.folders.filter(f => f.id !== id);
+      state.todos = state.todos.filter(t => t.folderId !== id);
+      if (state.selectedFolderId === id) state.selectedFolderId = 'all';
+      renderAll();
+    }
+
+    // TODO CRUD
+    function openAddTodoModal() {
+      document.getElementById('todoEditId').value = '';
+      document.getElementById('todoTitleInput').value = '';
+      document.getElementById('todoDescInput').value = '';
+
+      const select = document.getElementById('todoFolderSelect');
+      select.innerHTML = '';
+      state.folders.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.id;
+        opt.innerText = f.name;
+        select.appendChild(opt);
+      });
+
+      renderTodoIconPicker('fa-list-check');
+      document.getElementById('todoModal').classList.remove('hidden');
+    }
+
+    function editTodo(id) {
+      const todo = state.todos.find(t => t.id === id);
+      if (!todo) return;
+
+      document.getElementById('todoEditId').value = todo.id;
+      document.getElementById('todoTitleInput').value = todo.title;
+      document.getElementById('todoDescInput').value = todo.desc || '';
+
+      const select = document.getElementById('todoFolderSelect');
+      select.innerHTML = '';
+      state.folders.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.id;
+        opt.innerText = f.name;
+        if (todo.folderId === f.id) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      renderTodoIconPicker(todo.icon || 'fa-list-check');
+      document.getElementById('todoModal').classList.remove('hidden');
+    }
+
+    function renderTodoIconPicker(selectedIcon) {
+      const container = document.getElementById('todoIconPickerContainer');
+      container.innerHTML = '';
+      TASK_ICON_LIST.forEach(icon => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `p-2 rounded-xl border text-center transition ${
+          icon === selectedIcon ? 'bg-lavender-600 text-white border-lavender-600' : 'bg-slate-50 text-slate-600 border-slate-200'
+        }`;
+        btn.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+        btn.onclick = () => {
+          document.getElementById('selectedTodoIcon').value = icon;
+          renderTodoIconPicker(icon);
+        };
+        container.appendChild(btn);
+      });
+      document.getElementById('selectedTodoIcon').value = selectedIcon;
+    }
+
+    function closeTodoModal() {
+      document.getElementById('todoModal').classList.add('hidden');
+    }
+
+    async function handleSaveTodo(e) {
+      e.preventDefault();
+      const id = document.getElementById('todoEditId').value;
+      const title = document.getElementById('todoTitleInput').value.trim();
+      const rawFolderValue = document.getElementById('todoFolderSelect').value;
+      const folderId = rawFolderValue ? parseInt(rawFolderValue) : null;
+      const icon = document.getElementById('selectedTodoIcon').value;
+      const desc = document.getElementById('todoDescInput').value.trim();
+
+      if (id) {
+        // Mode Edit
+        const todo = state.todos.find(t => t.id == id);
+        if (todo) {
+          todo.title = title;
+          todo.folderId = folderId;
+          todo.icon = icon;
+          todo.desc = desc;
+        }
+        closeTodoModal();
+        renderAll();
+      } else {
+        // Mode Tambah Task Baru
+        const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+        
+        // Pastikan user_id dan folder_id terisi dengan valid
+        const newTodoPayload = {
+          user_id: 1, // Gunakan angka 1 dulu untuk tes koneksi ke database MySQL
+          folder_id: null,
+          title: title,
+          description: desc,
+          icon: icon,
+          due_date: now
+        };
+
+        try {
+          const response = await fetch('/api/todos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newTodoPayload)
+          });
+
+          if (!response.ok) {
+            throw new Error('Gagal menyimpan task ke database');
+          }
+
+          const savedTodo = await response.json();
+
+          state.todos.push({
+            id: savedTodo.id,
+            folderId: savedTodo.folder_id,
+            icon: savedTodo.icon,
+            title: savedTodo.title,
+            desc: savedTodo.description,
+            status: savedTodo.status,
+            createdAt: now
+          });
+
+          closeTodoModal();
+          renderAll();
+        } catch (error) {
+          console.error('Error Save Todo:', error);
+          alert('Gagal menyimpan task baru ke database.');
+        }
+      }
+    }
+
+    function toggleTodoStatus(id) {
+      const todo = state.todos.find(t => t.id === id);
+      if (todo) {
+        todo.status = todo.status === 'completed' ? 'pending' : 'completed';
+        renderTodos();
+      }
+    }
+
+    function deleteTodo(id) {
+      state.todos = state.todos.filter(t => t.id !== id);
+      state.commitLogs = state.commitLogs.filter(l => l.todoId !== id);
+      renderAll();
+    }
+
+    function setFilter(filter) {
+      state.currentFilter = filter;
+      ['all', 'pending', 'completed'].forEach(f => {
+        const btn = document.getElementById(`filter-${f}`);
+        btn.className = (f === filter)
+          ? 'px-3 py-1.5 text-xs font-semibold rounded-lg bg-lavender-600 text-white shadow-sm flex items-center gap-1.5'
+          : 'px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:bg-lavender-100 transition flex items-center gap-1.5';
+      });
+      renderTodos();
+    }
+
+    async function fetchTodosFromDB() {
+      try {
+        // Memanggil API getTodos dari todoController yang ada di app.js
+        const response = await fetch(`/api/todos?user_id=${state.currentUser.id}`);
+        const data = await response.json();
+        
+        // Timpa state lokal dengan data dari database MySQL
+        state.todos = data; 
+        
+        // Render ulang UI
+        renderTodos();
+      } catch (error) {
+        console.error('Gagal mengambil data:', error);
+      }
+    }
+
+    window.onload = function() {
+      // Ambil tema tersimpan dari localStorage, jika tidak ada baru gunakan default 'sky'
+      const savedTheme = localStorage.getItem('user_theme') || 'sky';
+      switchTheme(savedTheme);
+    };
+  </script>
+</body>
+</html>
