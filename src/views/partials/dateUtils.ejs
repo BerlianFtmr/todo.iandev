@@ -1,0 +1,48 @@
+<%
+/* =========================================================================
+   Shared date/time helpers (client-side)
+   - formatDate(value)  : tampilkan tanggal/jam secara LOKAL (WIB), aman dari
+                          pergeseran UTC. Menerima string dari DB ("YYYY-MM-DD HH:MM:SS"),
+                          string seed, Date, atau timestamp. Tidak memakai toISOString().
+   - nowLocal()         : waktu "sekarang" dalam format "YYYY-MM-DD HH:MM" lokal,
+                          dipakai saat membuat data di sisi klien.
+   ========================================================================= */
+%>
+    // --- start dateUtils.ejs ---
+    function pad2(n) { return String(n).padStart(2, '0'); }
+
+    // Ambil komponen waktu lokal dari sebuah nilai tanggal.
+    function toLocalParts(value) {
+      if (value === null || value === undefined || value === '') return null;
+
+      // String dari MySQL (dateStrings:true): "YYYY-MM-DD HH:MM:SS" atau
+      // "YYYY-MM-DDTHH:MM:SS.000Z". Jika tanpa penanda zona, anggap sudah waktu lokal.
+      if (typeof value === 'string') {
+        const m = value.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+        if (m && !/[zZ]|[+-]\d{2}:?\d{2}$/.test(value)) {
+          return { y: +m[1], mo: +m[2], d: +m[3], h: +m[4], mi: +m[5] };
+        }
+      }
+
+      // Fallback: Date valid (string berzona, Date, atau epoch)
+      const dt = value instanceof Date ? value : new Date(value);
+      if (isNaN(dt.getTime())) return null;
+      return {
+        y: dt.getFullYear(), mo: dt.getMonth() + 1, d: dt.getDate(),
+        h: dt.getHours(), mi: dt.getMinutes()
+      };
+    }
+
+    // Format tampilan: "YYYY-MM-DD HH:MM" (lokal, tanpa pergeseran UTC)
+    function formatDate(value) {
+      const p = toLocalParts(value);
+      if (!p) return '-';
+      return `${p.y}-${pad2(p.mo)}-${pad2(p.d)} ${pad2(p.h)}:${pad2(p.mi)}`;
+    }
+
+    // Waktu sekarang (lokal) sebagai "YYYY-MM-DD HH:MM"
+    function nowLocal() {
+      const d = new Date();
+      return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    }
+    // --- end dateUtils.ejs ---

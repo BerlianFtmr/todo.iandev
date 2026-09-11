@@ -19,6 +19,15 @@ const CommitLogModel = {
     return result.insertId;
   },
 
+  // Ambil timestamp created_at sebuah log (dipakai untuk response POST)
+  async getCreatedAt(id) {
+    const [rows] = await db.execute(
+      'SELECT created_at FROM commit_logs WHERE id = ?',
+      [id]
+    );
+    return rows[0]?.created_at || null;
+  },
+
   // Hapus commit log berdasarkan ID
   async delete(id) {
     const [result] = await db.execute(

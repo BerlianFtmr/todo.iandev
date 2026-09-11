@@ -8,6 +8,8 @@ services:
       - MYSQL_DATABASE=tododb
       - MYSQL_USER=myuser
       - MYSQL_PASSWORD=123456
+      - TZ=Asia/Jakarta
+    command: --default-time-zone=+07:00
     ports:
       - "3307:3306"
     volumes:

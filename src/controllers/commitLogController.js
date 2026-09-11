@@ -27,7 +27,8 @@ const CommitLogController = {
       }
 
       const id = await CommitLogModel.create(user_id, todo_id, message);
-      res.status(201).json({ id, user_id, todo_id, message });
+      const created_at = await CommitLogModel.getCreatedAt(id);
+      res.status(201).json({ id, user_id, todo_id, message, created_at });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }

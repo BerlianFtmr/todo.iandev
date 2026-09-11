@@ -578,6 +578,7 @@
   </div>
 
   <script>
+    <%- include('partials/dateUtils') %>
     // GLOBAL STATE MANAGEMENT
     const THEMES = {
       sky: { name: 'Blue Sky', badge: 'Blue Sky Theme', icon: 'fa-cloud-sun' },
@@ -913,12 +914,6 @@
           let todoData = Array.isArray(result) ? result : (result.success && Array.isArray(result.data) ? result.data : null);
           if (todoData) {
             state.todos = todoData.map(t => {
-              let formattedDate = '-';
-              if (t.created_at || t.due_date) {
-                const rawDate = t.created_at || t.due_date;
-                formattedDate = new Date(rawDate).toISOString().replace('T', ' ').substring(0, 16);
-              }
-
               return {
                 id: t.id,
                 folderId: t.folder_id || null,
@@ -926,7 +921,7 @@
                 desc: t.description || '',
                 icon: t.icon || 'fa-list-check',
                 status: t.status || 'pending',
-                createdAt: formattedDate
+                createdAt: formatDate(t.created_at)
               };
             });
             loaded = true;
@@ -960,7 +955,7 @@
               id: log.id,
               todoId: log.todo_id || todoId,
               message: log.message || log.description || '',
-              createdAt: log.created_at ? new Date(log.created_at).toISOString().replace('T', ' ').substring(0, 16) : new Date().toISOString().replace('T', ' ').substring(0, 16)
+              createdAt: formatDate(log.created_at)
             });
           });
         } catch (err) {

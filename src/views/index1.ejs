@@ -574,6 +574,7 @@
   </div>
 
   <script>
+    <%- include('partials/dateUtils') %>
     // GLOBAL STATE MANAGEMENT
     const THEMES = {
       sky: { name: 'Blue Sky', badge: 'Blue Sky Theme', icon: 'fa-cloud-sun' },
@@ -950,7 +951,7 @@
       const text = input.value.trim();
       if (!text || !state.activeTodoId) return;
 
-      const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+      const now = nowLocal();
 
       state.commitLogs.unshift({
         id: Date.now(),
@@ -1125,7 +1126,7 @@
         renderAll();
       } else {
         // Mode Tambah Task Baru
-        const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+        const now = nowLocal();
         
         // Pastikan user_id dan folder_id terisi dengan valid
         const newTodoPayload = {
@@ -1133,8 +1134,7 @@
           folder_id: null,
           title: title,
           description: desc,
-          icon: icon,
-          due_date: now
+          icon: icon
         };
 
         try {
