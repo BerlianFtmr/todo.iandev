@@ -89,7 +89,7 @@ DB_HOST=mysql        # nama service di dalam Docker network
 DB_PORT=3306
 APP_TIMEZONE=+07:00
 PORT=5000
-APP_HOST_PORT=127.0.0.1:5000
+APP_HOST_PORT=5001   # port host (localhost), beda dari dev agar tidak bentrok
 ```
 
 > **⚠️ Penting:** `.env` dan `.env.production` dikecualikan dari version control melalui `.gitignore` agar kredensial tetap aman. Gunakan password yang kuat dan **berbeda** untuk `MYSQL_ROOT_PASSWORD` dan `DB_PASSWORD` sebelum deploy.
@@ -115,9 +115,14 @@ Aplikasi berjalan di **port 5000** (dapat diubah lewat `PORT`). Buka browser di 
 
 Stack production berupa image Docker multi-stage yang berjalan sebagai **non-root**, menjalankan **Express + EJS**, dengan **MySQL 8** pada named volume tersendiri. Networking, reverse proxy, dan SSL diasumsikan ditangani secara eksternal (mis. **Cloudflare Tunnel**), sehingga port aplikasi hanya di-bind ke **localhost**.
 
+> **⚠️ Penting:** Pastikan `npm run dev` **sudah dimatikan** sebelum menjalankan
+> production. Jika tidak, proses dev yang memakai port 5000 dan `.env` dev
+> (`127.0.0.1:3307`) bisa menyerobot trafik dan memunculkan error
+> `connect ECONNREFUSED 127.0.0.1:3307`.
+
 ```bash
 # Build dan jalankan stack production
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
 
 # Cek status dan log
 docker compose -f docker-compose.prod.yml ps
@@ -131,10 +136,27 @@ docker compose -f docker-compose.prod.yml down -v
 ```
 
 **Catatan**
-- Aplikasi diakses melalui `127.0.0.1:5000` pada host. Arahkan Cloudflare Tunnel ke `http://localhost:5000`.
+- Aplikasi diakses melalui `127.0.0.1:5001` pada host (lihat `APP_HOST_PORT`). Arahkan Cloudflare Tunnel ke `http://localhost:5001`.
 - `schema.sql` dijalankan otomatis **hanya saat volume MySQL masih kosong** (inisialisasi pertama). Perubahan skema berikutnya harus diterapkan manual.
 - MySQL **tidak** di-publish ke host; hanya dapat diakses oleh service `app` di dalam Docker network.
 - Kedua service memiliki healthcheck; aplikasi menunggu MySQL berstatus `healthy` sebelum dijalankan.
+
+### Migration Database (untuk volume yang sudah ada)
+
+Karena `schema.sql` hanya jalan saat volume kosong, perubahan skema pada database yang
+sudah berjalan harus diterapkan lewat file di folder `migrations/`. Semua file migration
+dirancang **idempotent** (aman dijalankan berulang).
+
+```bash
+# Lihat daftar migration
+ls migrations/
+
+# Terapkan migration ke database production (container)
+docker exec -i todo_iandev_mysql mysql -u myuser -p tododb < "migrations/2026-09-14 - add color column to folders.sql"
+```
+
+> Pada deployment **volume baru**, folder `migrations/` otomatis ter-mount ke
+> `docker-entrypoint-initdb.d`, sehingga migration ikut dijalankan saat inisialisasi awal.
 
 ---
 
@@ -163,6 +185,7 @@ docker compose -f docker-compose.prod.yml down -v
 ├─ docs/                # Catatan prompt / planning
 ├─ mysql-data/          # Data MySQL lokal (dev, gitignored)
 ├─ schema.sql           # Skema database (users, folders, todos, commit_logs)
+├─ migrations/          # Migration idempotent untuk DB yang sudah berjalan
 ├─ Dockerfile           # Image production multi-stage
 ├─ .dockerignore        # Pengecualian build context
 ├─ docker-compose.yml       # Dev: container MySQL

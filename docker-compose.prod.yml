@@ -4,7 +4,18 @@
 # Reverse proxy / SSL / jaringan publik ditangani Cloudflare Tunnel.
 # Port app hanya di-bind ke localhost host, tidak expose ke publik.
 #
-# Jalankan: docker compose -f docker-compose.prod.yml up -d --build
+# Jalankan: docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+#
+# Catatan penting soal koneksi DB:
+#   Di dalam container, DB diakses lewat nama service "mysql" port 3306,
+#   BUKAN 127.0.0.1:3307 (itu setting dev di .env untuk host).
+#   Service app di bawah memaksa DB_HOST=mysql & DB_PORT=3306 dan
+#   membaca env_file .env.production, sehingga tidak akan jatuh ke .env dev.
+#
+# Error "connect ECONNREFUSED 127.0.0.1:3307" bisa juga muncul jika proses
+# `npm run dev` di host MASIH JALAN dan menyerobot port 5000 yang sama.
+# Karena itu port host production di-set default 5001 (lihat service app),
+# dan pastikan `npm run dev` sudah dimatikan sebelum menjalankan production.
 # ============================================================
 
 services:
@@ -23,7 +34,10 @@ services:
       # Named volume agar data persist terkelola docker
       - mysql_data:/var/lib/mysql
       # Init schema hanya jalan saat volume kosong (pertama kali)
-      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      # Migration idempotent: aman dijalankan pada volume baru.
+      # Untuk volume yang SUDAH ADA, jalankan manual (lihat README / komentar di file migration).
+      - ./migrations:/docker-entrypoint-initdb.d/migrations:ro
     networks:
       - todo_net
     healthcheck:
@@ -46,19 +60,28 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    # Baca .env.production langsung dari service app, sehingga nilai DB_*
+    # SELALU benar di dalam container (tidak bergantung --env-file saat up).
+    # Ini mencegah app jatuh ke default dotenv/.env dev (127.0.0.1:3307).
+    env_file:
+      - .env.production
     environment:
       NODE_ENV: production
       PORT: ${PORT:-5000}
       TZ: Asia/Jakarta
+      # Host & port DB WAJIB internal docker, bukan localhost.
+      # Nilai ini menang atas apa pun di .env.production, jadi tidak bisa salah.
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
       APP_TIMEZONE: ${APP_TIMEZONE:-+07:00}
-    # Bind ke localhost host saja; Cloudflare Tunnel yang meneruskan trafik
+    # Bind ke localhost host saja; Cloudflare Tunnel yang meneruskan trafik.
+    # Default host port 127.0.0.1:5001 (bukan 5000) agar tidak bentrok dengan
+    # `npm run dev` di host yang juga memakai 5000. Ubah lewat APP_HOST_PORT.
     ports:
-      - "${APP_HOST_PORT:-127.0.0.1:5000}:5000"
+      - "127.0.0.1:${APP_HOST_PORT:-5001}:5000"
     networks:
       - todo_net
 
