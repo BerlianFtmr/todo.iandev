@@ -33,7 +33,7 @@ view dengan class `.hidden` (state di `state` global JS). Tidak ada routing URL.
 | Login / Register | `#loginView` | Kartu auth terpusat + theme switcher di kanan atas |
 | Dashboard | `#dashboardView` | Sidebar folder + main content (grid kartu task) |
 | Detail Task | `#detailScreenView` | Full-screen: info task (kiri) + timeline progress commit (kanan) |
-| Modal Folder | `#folderModal` | Tambah/Edit folder + icon picker |
+| Modal Folder | `#folderModal` | Tambah/Edit folder/section + icon picker |
 | Modal Todo | `#todoModal` | Tambah/Edit task + icon picker |
 
 Transisi antar view dikendalikan fungsi JS: `enterDashboard()`, `openTodoDetailScreen(id)`,

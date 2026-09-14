@@ -11,14 +11,19 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Tabel Folders
+-- parent_id NULL   => folder utama (top-level)
+-- parent_id <id>   => section/subfolder di dalam folder utama tersebut
 CREATE TABLE IF NOT EXISTS folders (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
+  parent_id INT NULL,
   name VARCHAR(100) NOT NULL,
   icon VARCHAR(50) DEFAULT 'fa-folder',
   color CHAR(7) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (parent_id) REFERENCES folders(id) ON DELETE CASCADE,
+  INDEX idx_folders_parent (parent_id)
 );
 
 -- Tabel Todos

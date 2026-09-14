@@ -22,6 +22,8 @@ Aplikasi web **Todo List & Progress Tracker** sederhana yang dibangun dengan **N
 - Registrasi dan autentikasi pengguna (password di-hash dengan **bcryptjs**)
 - Create, read, update, delete **Task**
 - Mengelompokkan task ke dalam **folder** (dengan ikon kustom)
+- Menambahkan **section/subfolder** di dalam folder utama agar task lebih termanajemen
+  (form create section identik dengan form folder utama)
 - Melacak perubahan dengan **commit log** (timeline progress)
 - Front-end single-page menggunakan **EJS** + Tailwind CSS + Font Awesome
 - 4 pilihan tema warna (Blue Sky, Lavender Mist, Emerald Breeze, Rose Sunset)

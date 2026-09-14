@@ -530,7 +530,15 @@
 
       <form onsubmit="handleSaveFolder(event)" class="p-6 space-y-4">
         <input type="hidden" id="folderEditId">
-        
+
+        <div id="folderParentWrapper">
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Tipe / Folder Induk</label>
+          <select id="folderParentSelect" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lavender-400 text-sm">
+            <option value="">Folder Utama (top-level)</option>
+          </select>
+          <p class="text-[11px] text-slate-400 mt-1">Pilih folder utama untuk menjadikannya sebagai section di dalam folder tersebut.</p>
+        </div>
+
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nama Folder</label>
           <input type="text" id="folderNameInput" required placeholder="Contoh: Kuliah, Latihan, Proyek" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lavender-400 text-sm"/>
@@ -918,7 +926,8 @@
               id: f.id,
               name: f.name,
               icon: f.icon || 'fa-folder',
-              color: f.color || null
+              color: f.color || null,
+              parentId: f.parent_id || null
             }));
             loaded = true;
           }
@@ -1018,7 +1027,16 @@
         if (selected) {
           const iconColorStyle = selected.color ? ` style="color:${selected.color}"` : ' class="text-lavender-600"';
           document.getElementById('currentFolderTitle').innerHTML = `<i class="fa-solid ${selected.icon}"${iconColorStyle}></i> <span>${selected.name}</span>`;
-          document.getElementById('currentFolderDesc').innerText = `Menampilkan tugas dalam folder ${selected.name}`;
+
+          if (selected.parentId) {
+            const parent = state.folders.find(f => f.id === selected.parentId);
+            document.getElementById('currentFolderDesc').innerText = `Section "${selected.name}"${parent ? ` dalam folder ${parent.name}` : ''}`;
+          } else {
+            const sectionCount = state.folders.filter(f => f.parentId === selected.id).length;
+            document.getElementById('currentFolderDesc').innerText = sectionCount
+              ? `Menampilkan tugas dalam folder ${selected.name} dan ${sectionCount} section-nya`
+              : `Menampilkan tugas dalam folder ${selected.name}`;
+          }
         }
       }
 
@@ -1030,34 +1048,58 @@
       const container = document.getElementById('folderListContainer');
       container.innerHTML = '';
 
-      state.folders.forEach(folder => {
-        const count = state.todos.filter(t => t.folderId === folder.id).length;
+      const mainFolders = state.folders.filter(f => !f.parentId);
+      const sectionsOf = (parentId) => state.folders.filter(f => f.parentId === parentId);
+
+      // Hitung jumlah task langsung di folder + seluruh section anaknya.
+      const countWithSections = (folder) => {
+        const childIds = sectionsOf(folder.id).map(s => s.id);
+        const ids = [folder.id, ...childIds];
+        return state.todos.filter(t => ids.includes(t.folderId)).length;
+      };
+
+      const buildFolderRow = (folder, isSection) => {
+        const count = isSection
+          ? state.todos.filter(t => t.folderId === folder.id).length
+          : countWithSections(folder);
         const isActive = state.selectedFolderId === folder.id;
 
         const btn = document.createElement('div');
-        btn.className = `group flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer ${
+        btn.className = `group flex items-center justify-between rounded-xl text-sm font-medium transition cursor-pointer ${
+          isSection ? 'pl-9 pr-3 py-2 text-[13px]' : 'px-3 py-2.5'
+        } ${
           isActive ? 'bg-lavender-100 text-lavender-900 font-semibold shadow-sm' : 'text-slate-600 hover:bg-slate-100'
         }`;
         btn.onclick = () => selectFolder(folder.id);
 
         btn.innerHTML = `
           <div class="flex items-center gap-3 truncate">
-            <i class="fa-solid ${folder.icon} ${folder.color ? '' : 'text-lavender-600'} w-5"${folder.color ? ` style="color:${folder.color}"` : ''}></i>
+            <i class="fa-solid ${isSection ? (folder.icon === 'fa-folder' ? 'fa-angle-right' : folder.icon) : folder.icon} ${folder.color ? '' : (isSection ? 'text-slate-400' : 'text-lavender-600')} ${isSection ? 'w-4 text-xs' : 'w-5'}"${folder.color ? ` style="color:${folder.color}"` : ''}></i>
             <span class="truncate">${folder.name}</span>
           </div>
           <div class="flex items-center gap-1.5">
             <span class="text-xs ${isActive ? 'bg-white text-lavender-700 font-bold' : 'bg-slate-100 text-slate-500'} px-2 py-0.5 rounded-full">
               ${count}
             </span>
+            ${!isSection ? `<button onclick="event.stopPropagation(); openAddSectionModal(${folder.id})" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-lavender-700 p-1 transition" title="Tambah Section">
+              <i class="fa-solid fa-folder-plus text-xs"></i>
+            </button>` : ''}
             <button onclick="event.stopPropagation(); openEditFolderModal(${folder.id})" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-lavender-700 p-1 transition">
               <i class="fa-solid fa-pen-to-square text-xs"></i>
             </button>
-            <button onclick="event.stopPropagation(); deleteFolder(${folder.id})" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 p-1 transition">
+            <button onclick="event.stopPropagation(); deleteFolder(${folder.id}, ${isSection ? 'true' : 'false'})" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 p-1 transition">
               <i class="fa-solid fa-trash text-xs"></i>
             </button>
           </div>
         `;
-        container.appendChild(btn);
+        return btn;
+      };
+
+      mainFolders.forEach(folder => {
+        container.appendChild(buildFolderRow(folder, false));
+        sectionsOf(folder.id).forEach(section => {
+          container.appendChild(buildFolderRow(section, true));
+        });
       });
 
       document.getElementById('badge-all-count').innerText = state.todos.length;
@@ -1086,7 +1128,13 @@
 
       let filtered = state.todos;
       if (state.selectedFolderId !== 'all') {
-        filtered = filtered.filter(t => t.folderId === state.selectedFolderId);
+        const selectedFolder = state.folders.find(f => f.id === state.selectedFolderId);
+        // Bila folder utama dipilih, tampilkan juga task dari semua section di dalamnya.
+        const isMainFolder = selectedFolder && !selectedFolder.parentId;
+        const folderIds = isMainFolder
+          ? [state.selectedFolderId, ...state.folders.filter(f => f.parentId === state.selectedFolderId).map(f => f.id)]
+          : [state.selectedFolderId];
+        filtered = filtered.filter(t => folderIds.includes(t.folderId));
       }
 
       if (state.currentFilter === 'pending') {
@@ -1409,12 +1457,49 @@
       applyFolderColorPreview();
     }
 
+    // Isi dropdown "Folder Induk" pada modal folder.
+    // excludeId dipakai agar folder yang sedang diedit tidak bisa jadi induk dirinya sendiri.
+    function populateFolderParentSelect(selectedParentId, excludeId) {
+      const select = document.getElementById('folderParentSelect');
+      select.innerHTML = '<option value="">Folder Utama (top-level)</option>';
+
+      state.folders
+        .filter(f => !f.parentId && f.id !== excludeId)
+        .forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f.id;
+          opt.innerText = f.name;
+          if (String(f.id) === String(selectedParentId)) opt.selected = true;
+          select.appendChild(opt);
+        });
+
+      // Dropdown induk hanya relevan saat membuat folder baru.
+      // Saat edit, struktur parent dipertahankan (tidak dipindah-pindah) agar sederhana.
+      const wrapper = document.getElementById('folderParentWrapper');
+      if (wrapper) wrapper.classList.toggle('hidden', !!excludeId);
+    }
+
     function openAddFolderModal() {
       document.getElementById('folderEditId').value = '';
       document.getElementById('folderNameInput').value = '';
       document.getElementById('folderModalTitle').innerHTML = `<i class="fa-solid fa-folder-plus text-lavender-600"></i> Tambah Folder Baru`;
       renderFolderIconPicker('fa-folder');
       setFolderColor('');
+      populateFolderParentSelect('', null);
+      document.getElementById('folderModal').classList.remove('hidden');
+    }
+
+    // Buka modal create folder namun dengan folder induk sudah terpilih (buat section).
+    function openAddSectionModal(parentId) {
+      const parent = state.folders.find(f => f.id === parentId);
+      if (!parent) return;
+
+      document.getElementById('folderEditId').value = '';
+      document.getElementById('folderNameInput').value = '';
+      document.getElementById('folderModalTitle').innerHTML = `<i class="fa-solid fa-folder-plus text-lavender-600"></i> Tambah Section di "${parent.name}"`;
+      renderFolderIconPicker('fa-folder');
+      setFolderColor('');
+      populateFolderParentSelect(parentId, null);
       document.getElementById('folderModal').classList.remove('hidden');
     }
 
@@ -1424,9 +1509,10 @@
 
       document.getElementById('folderEditId').value = folder.id;
       document.getElementById('folderNameInput').value = folder.name;
-      document.getElementById('folderModalTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-lavender-600"></i> Edit Folder`;
+      document.getElementById('folderModalTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-lavender-600"></i> Edit ${folder.parentId ? 'Section' : 'Folder'}`;
       renderFolderIconPicker(folder.icon || 'fa-folder');
       setFolderColor(folder.color || '');
+      populateFolderParentSelect('', folder.id);
       document.getElementById('folderModal').classList.remove('hidden');
     }
 
@@ -1469,6 +1555,10 @@
         return;
       }
 
+      // Parent hanya berlaku saat membuat folder/section baru.
+      const parentRaw = document.getElementById('folderParentSelect')?.value || '';
+      const parentId = parentRaw ? parseInt(parentRaw) : null;
+
       let response;
       if (id) {
         response = await safeFetch(`/api/folders/${id}`, {
@@ -1480,7 +1570,7 @@
         response = await safeFetch('/api/folders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId, name, icon, color })
+          body: JSON.stringify({ user_id: userId, name, icon, color, parent_id: parentId })
         });
       }
 
@@ -1492,11 +1582,19 @@
 
       closeFolderModal();
       await fetchFoldersFromDB();
-      showToast('Folder berhasil disimpan.', 'success');
+      await fetchTodosFromDB();
+      showToast(parentId && !id ? 'Section berhasil disimpan.' : 'Folder berhasil disimpan.', 'success');
     }
 
-    async function deleteFolder(id) {
-      if (!confirm('Hapus folder ini? Task yang berada di dalamnya akan otomatis terhapus.')) return;
+    async function deleteFolder(id, isSection = false) {
+      const folder = state.folders.find(f => f.id === id);
+      const hasSections = !isSection && state.folders.some(f => f.parentId === id);
+      const confirmMsg = isSection
+        ? 'Hapus section ini? Task yang berada di dalamnya akan otomatis terhapus.'
+        : (hasSections
+            ? 'Hapus folder ini beserta seluruh section dan task di dalamnya?'
+            : 'Hapus folder ini? Task yang berada di dalamnya akan otomatis terhapus.');
+      if (!confirm(confirmMsg)) return;
 
       const userId = state.currentUser?.id;
       const response = await safeFetch(`/api/folders/${id}?user_id=${userId}`, { method: 'DELETE' });
@@ -1509,7 +1607,7 @@
       if (state.selectedFolderId === id) state.selectedFolderId = 'all';
       await fetchFoldersFromDB();
       await fetchTodosFromDB();
-      showToast('Folder berhasil dihapus.', 'success');
+      showToast(isSection ? 'Section berhasil dihapus.' : 'Folder berhasil dihapus.', 'success');
     }
 
     // MODAL & FORM HANDLERS FOR TODO
@@ -1546,12 +1644,25 @@
       const select = document.getElementById('todoFolderSelect');
       select.innerHTML = '';
 
-      state.folders.forEach(f => {
+      const mainFolders = state.folders.filter(f => !f.parentId);
+
+      mainFolders.forEach(f => {
         const opt = document.createElement('option');
         opt.value = f.id;
         opt.innerText = f.name;
         if (f.id == selectedId) opt.selected = true;
         select.appendChild(opt);
+
+        // Section di dalam folder ini ditampilkan menjorok agar jelas hierarkinya.
+        state.folders
+          .filter(s => s.parentId === f.id)
+          .forEach(s => {
+            const sopt = document.createElement('option');
+            sopt.value = s.id;
+            sopt.innerText = `\u00A0\u00A0\u00A0\u00A0↳ ${s.name}`;
+            if (s.id == selectedId) sopt.selected = true;
+            select.appendChild(sopt);
+          });
       });
     }
 

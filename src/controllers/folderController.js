@@ -32,10 +32,11 @@ const FolderController = {
     }
   },
 
-  // Buat folder baru
+  // Buat folder/section baru.
+  // parent_id opsional: bila diisi, folder dibuat sebagai section di dalam folder induk.
   async createFolder(req, res) {
     try {
-      const { user_id, name, icon, color } = req.body;
+      const { user_id, name, icon, color, parent_id } = req.body;
       if (!user_id || !name) {
         return res.status(400).json({ error: 'user_id dan nama folder wajib diisi.' });
       }
@@ -45,8 +46,26 @@ const FolderController = {
         return res.status(400).json({ error: 'Kode warna tidak valid. Gunakan format hex, mis. #8128ed.' });
       }
 
-      const id = await FolderModel.create(user_id, name, icon, hexColor);
-      res.status(201).json({ id, name, icon: icon || 'fa-folder', color: hexColor });
+      // Validasi parent: bila diisi, folder induk harus ada, milik user yang sama,
+      // dan berupa folder utama (bukan section) agar kedalaman maksimal 1 tingkat.
+      let parentId = null;
+      if (parent_id !== undefined && parent_id !== null && parent_id !== '') {
+        parentId = Number(parent_id);
+        if (!Number.isInteger(parentId) || parentId <= 0) {
+          return res.status(400).json({ error: 'Folder induk tidak valid.' });
+        }
+
+        const parent = await FolderModel.getById(parentId, user_id);
+        if (!parent) {
+          return res.status(404).json({ error: 'Folder induk tidak ditemukan.' });
+        }
+        if (parent.parent_id) {
+          return res.status(400).json({ error: 'Section tidak dapat memiliki sub-section.' });
+        }
+      }
+
+      const id = await FolderModel.create(user_id, name, icon, hexColor, parentId);
+      res.status(201).json({ id, name, icon: icon || 'fa-folder', color: hexColor, parent_id: parentId });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -81,7 +100,16 @@ const FolderController = {
   async deleteFolder(req, res) {
     try {
       const { id } = req.params;
-      await FolderModel.delete(id);
+      const { user_id } = req.query;
+      if (!user_id) {
+        return res.status(400).json({ error: 'user_id wajib disertakan.' });
+      }
+
+      const affected = await FolderModel.delete(id, user_id);
+      if (!affected) {
+        return res.status(404).json({ error: 'Folder tidak ditemukan.' });
+      }
+
       res.json({ message: 'Folder berhasil dihapus.' });
     } catch (error) {
       res.status(500).json({ error: error.message });
