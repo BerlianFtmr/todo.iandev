@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FocusDo - Todo List & Progress Tracker SPA</title>
+  <title>todo.iandev - Todo List & Progress Tracker SPA</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -146,7 +146,7 @@
           <div class="w-16 h-16 bg-lavender-100 text-lavender-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl shadow-inner">
             <i class="fa-solid fa-list-check"></i>
           </div>
-          <h1 class="text-2xl font-bold text-slate-800">FocusDo</h1>
+          <h1 class="text-2xl font-bold text-slate-800">todo.iandev</h1>
           <p class="text-sm text-slate-500 mt-1">Kelola tugas dan catat progress harianmu</p>
         </div>
 
@@ -280,7 +280,7 @@
               <i class="fa-solid fa-list-check"></i>
             </div>
             <div>
-              <h2 class="font-bold text-slate-800 text-base leading-tight">FocusDo</h2>
+              <h2 class="font-bold text-slate-800 text-base leading-tight">todo.iandev</h2>
               <span id="activeThemeBadge" class="text-xs text-lavender-600 font-medium bg-lavender-50 px-2 py-0.5 rounded-full border border-lavender-100 inline-flex items-center gap-1">
                 <i class="fa-solid fa-cloud-sun"></i> Blue Sky Theme
               </span>
@@ -667,9 +667,9 @@
       if (!state.currentUser) return;
       try {
         const uId = state.currentUser.id;
-        localStorage.setItem(`focusdo_folders_${uId}`, JSON.stringify(state.folders));
-        localStorage.setItem(`focusdo_todos_${uId}`, JSON.stringify(state.todos));
-        localStorage.setItem(`focusdo_logs_${uId}`, JSON.stringify(state.commitLogs));
+        localStorage.setItem(`todo_iandev_folders_${uId}`, JSON.stringify(state.folders));
+        localStorage.setItem(`todo_iandev_todos_${uId}`, JSON.stringify(state.todos));
+        localStorage.setItem(`todo_iandev_logs_${uId}`, JSON.stringify(state.commitLogs));
       } catch (e) {
         console.warn('Gagal menyimpan data ke localStorage:', e);
       }
@@ -678,7 +678,7 @@
     function loadLocalFolders() {
       if (!state.currentUser) { state.folders = []; return; }
       const uId = state.currentUser.id;
-      const saved = localStorage.getItem(`focusdo_folders_${uId}`);
+      const saved = localStorage.getItem(`todo_iandev_folders_${uId}`);
       if (saved) {
         try { state.folders = JSON.parse(saved); return; } catch(e){}
       }
@@ -688,7 +688,7 @@
     function loadLocalTodos() {
       if (!state.currentUser) { state.todos = []; return; }
       const uId = state.currentUser.id;
-      const saved = localStorage.getItem(`focusdo_todos_${uId}`);
+      const saved = localStorage.getItem(`todo_iandev_todos_${uId}`);
       if (saved) {
         try { state.todos = JSON.parse(saved); return; } catch(e){}
       }
@@ -698,7 +698,7 @@
     function loadLocalLogs() {
       if (!state.currentUser) { state.commitLogs = []; return; }
       const uId = state.currentUser.id;
-      const saved = localStorage.getItem(`focusdo_logs_${uId}`);
+      const saved = localStorage.getItem(`todo_iandev_logs_${uId}`);
       if (saved) {
         try { state.commitLogs = JSON.parse(saved); return; } catch(e){}
       }
@@ -809,7 +809,7 @@
       }
 
       state.currentUser = userObj;
-      localStorage.setItem('focusdo_active_user', JSON.stringify(userObj));
+      localStorage.setItem('todo_iandev_active_user', JSON.stringify(userObj));
 
       enterDashboard();
     }
@@ -840,7 +840,7 @@
 
     function handleLogout() {
       state.currentUser = null;
-      localStorage.removeItem('focusdo_active_user');
+      localStorage.removeItem('todo_iandev_active_user');
       document.getElementById('dashboardView').classList.add('hidden');
       document.getElementById('detailScreenView').classList.add('hidden');
       document.getElementById('loginView').classList.remove('hidden');
@@ -1516,14 +1516,14 @@
       const savedTheme = localStorage.getItem('user_theme') || 'sky';
       switchTheme(savedTheme);
 
-      const activeUser = localStorage.getItem('focusdo_active_user');
+      const activeUser = localStorage.getItem('todo_iandev_active_user');
       if (activeUser) {
         try {
           state.currentUser = JSON.parse(activeUser);
           enterDashboard();
           return;
         } catch (e) {
-          localStorage.removeItem('focusdo_active_user');
+          localStorage.removeItem('todo_iandev_active_user');
         }
       }
 

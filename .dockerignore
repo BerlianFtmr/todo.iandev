@@ -1,0 +1,27 @@
+# Dependencies (di-install ulang di dalam image)
+node_modules
+npm-debug.log*
+
+# Environment & secrets (di-inject via env / .env.production saat runtime)
+.env
+.env.*
+!.env.production.example
+
+# Data & git
+mysql-data
+.git
+.gitignore
+
+# Docs & config lokal (tidak dibutuhkan di runtime)
+docs
+*.md
+!README.md
+opencode.json
+.vscode
+.idea
+.DS_Store
+
+# Docker sendiri
+Dockerfile
+.dockerignore
+docker-compose*.yml

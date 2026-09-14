@@ -1,6 +1,6 @@
-# DESIGN.md — FocusDo Design System
+# DESIGN.md — todo.iandev Design System
 
-> Referensi design & visual pattern aplikasi **FocusDo** (Todo List & Progress Tracker).
+> Referensi design & visual pattern aplikasi **todo.iandev** (Todo List & Progress Tracker).
 > Dokumen ini mendokumentasikan kondisi design yang **sudah berjalan saat ini** agar
 > pengembangan berikutnya tetap konsisten.
 >
@@ -11,7 +11,7 @@
 
 ## 1. Ringkasan
 
-FocusDo adalah aplikasi SPA bergaya **soft / pastel modern** dengan:
+todo.iandev adalah aplikasi SPA bergaya **soft / pastel modern** dengan:
 
 - **Font**: Plus Jakarta Sans (Google Fonts, weight 400/500/600/700)
 - **CSS Framework**: Tailwind CSS (via CDN `cdn.tailwindcss.com` + `tailwind.config` inline)
@@ -270,7 +270,7 @@ judul `font-bold text-slate-700`, deskripsi `text-xs text-slate-400`.
 ### 7.12 Logo / Brand Mark
 
 Kotak ikon rounded dengan `bg-lavender-100 text-lavender-600`, ikon `fa-list-check`,
-dan teks "FocusDo". Dipakai konsisten di login, sidebar, dan favicon/title.
+dan teks "todo.iandev". Dipakai konsisten di login, sidebar, dan favicon/title.
 
 ---
 
@@ -327,8 +327,8 @@ Scrollbar mengikuti warna tema aktif (menggunakan variable tema).
 - Feedback aksi memakai **toast** (`success`/`error`), bukan alert.
 - Hover menampilkan aksi tersembunyi (edit/hapus) via `group-hover`.
 - Klik kartu task → buka detail full-screen; tombol "Kembali ke Dashboard" untuk keluar.
-- Sesi disimpan di `localStorage.focusdo_active_user`; tema di `localStorage.user_theme`;
-  data fallback per-user di `focusdo_folders_<id>` / `focusdo_todos_<id>` / `focusdo_logs_<id>`.
+- Sesi disimpan di `localStorage.todo_iandev_active_user`; tema di `localStorage.user_theme`;
+  data fallback per-user di `todo_iandev_folders_<id>` / `todo_iandev_todos_<id>` / `todo_iandev_logs_<id>`.
 
 ---
 
