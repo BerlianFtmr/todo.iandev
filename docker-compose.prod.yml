@@ -35,9 +35,15 @@ services:
       - mysql_data:/var/lib/mysql
       # Init schema hanya jalan saat volume kosong (pertama kali)
       - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-      # Migration idempotent: aman dijalankan pada volume baru.
-      # Untuk volume yang SUDAH ADA, jalankan manual (lihat README / komentar di file migration).
-      - ./migrations:/docker-entrypoint-initdb.d/migrations:ro
+      # PENTING: MySQL entrypoint HANYA menjalankan file *.sql yang berada
+      # LANGSUNG di /docker-entrypoint-initdb.d/ -- ia TIDAK menelusuri
+      # sub-folder. Karena itu migration tidak boleh di-mount sebagai folder
+      # (./migrations:/docker-entrypoint-initdb.d/migrations), tapi tiap file
+      # di-mount satu per satu ke level atas dengan prefix angka agar urut.
+      # Semua migration bersifat idempotent, jadi aman untuk volume baru.
+      # Untuk volume yang SUDAH ADA, jalankan manual (lihat README).
+      - "./migrations/2026-09-14 - add color column to folders.sql:/docker-entrypoint-initdb.d/02-migration-color.sql:ro"
+      - "./migrations/2026-09-14 - add parent_id column to folders.sql:/docker-entrypoint-initdb.d/03-migration-parent_id.sql:ro"
     networks:
       - todo_net
     healthcheck:

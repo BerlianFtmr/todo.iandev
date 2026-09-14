@@ -14,4 +14,11 @@ services:
       - "3307:3306"
     volumes:
       - ./mysql-data:/var/lib/mysql
-      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      # Init schema hanya jalan saat volume kosong (pertama kali)
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      # PENTING: MySQL entrypoint HANYA menjalankan file *.sql yang berada
+      # LANGSUNG di /docker-entrypoint-initdb.d/ (tidak menelusuri sub-folder).
+      # Tiap file migration di-mount satu per satu ke level atas dengan prefix
+      # angka agar urut. Semua migration idempotent, aman untuk volume baru.
+      - "./migrations/2026-09-14 - add color column to folders.sql:/docker-entrypoint-initdb.d/02-migration-color.sql"
+      - "./migrations/2026-09-14 - add parent_id column to folders.sql:/docker-entrypoint-initdb.d/03-migration-parent_id.sql"

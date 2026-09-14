@@ -139,7 +139,8 @@ docker compose -f docker-compose.prod.yml down -v
 
 **Catatan**
 - Aplikasi diakses melalui `127.0.0.1:5001` pada host (lihat `APP_HOST_PORT`). Arahkan Cloudflare Tunnel ke `http://localhost:5001`.
-- `schema.sql` dijalankan otomatis **hanya saat volume MySQL masih kosong** (inisialisasi pertama). Perubahan skema berikutnya harus diterapkan manual.
+- `schema.sql` dan semua file di `migrations/` dijalankan otomatis **hanya saat volume MySQL masih kosong** (inisialisasi pertama). Untuk volume yang sudah berjalan, perubahan skema harus diterapkan manual (lihat bagian *Migration Database* di bawah).
+- Sejak perbaikan ini, `docker-compose*.yml` me-mount tiap file migration ke `/docker-entrypoint-initdb.d/` secara individual. Sebelumnya folder `migrations/` di-mount sebagai sub-folder sehingga **tidak pernah dieksekusi** MySQL — inilah penyebab error `Unknown column 'parent_id' in 'field list'` pada database yang dibuat dari `schema.sql` versi lama.
 - MySQL **tidak** di-publish ke host; hanya dapat diakses oleh service `app` di dalam Docker network.
 - Kedua service memiliki healthcheck; aplikasi menunggu MySQL berstatus `healthy` sebelum dijalankan.
 
@@ -149,16 +150,24 @@ Karena `schema.sql` hanya jalan saat volume kosong, perubahan skema pada databas
 sudah berjalan harus diterapkan lewat file di folder `migrations/`. Semua file migration
 dirancang **idempotent** (aman dijalankan berulang).
 
-```bash
+```powershell
 # Lihat daftar migration
-ls migrations/
+Get-ChildItem migrations/
 
-# Terapkan migration ke database production (container)
-docker exec -i todo_iandev_mysql mysql -u myuser -p tododb < "migrations/2026-09-14 - add color column to folders.sql"
+# Terapkan migration ke database production (container) — jalankan berurutan.
+# Catatan PowerShell: '<' tidak didukung, gunakan pipe Get-Content -Raw.
+Get-Content -Raw "migrations/2026-09-14 - add color column to folders.sql" |
+  docker exec -i todo_iandev_mysql mysql -uroot -p123456
+Get-Content -Raw "migrations/2026-09-14 - add parent_id column to folders.sql" |
+  docker exec -i todo_iandev_mysql mysql -uroot -p123456
 ```
 
-> Pada deployment **volume baru**, folder `migrations/` otomatis ter-mount ke
-> `docker-entrypoint-initdb.d`, sehingga migration ikut dijalankan saat inisialisasi awal.
+> **Penting:** MySQL hanya menjalankan file `*.sql` yang berada **langsung** di
+> `/docker-entrypoint-initdb.d/` — ia **tidak** menelusuri sub-folder. Karena itu
+> `docker-compose*.yml` me-mount **tiap file migration satu per satu** ke level atas
+> dengan prefix angka (`02-…`, `03-…`) agar urut dan tetap dijalankan saat inisialisasi
+> volume baru. Jangan kembali ke pola mount folder (`./migrations:/docker-entrypoint-initdb.d/migrations`),
+> karena migration tidak akan dieksekusi.
 
 ---
 
