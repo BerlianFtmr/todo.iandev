@@ -1,5 +1,21 @@
 import FolderModel from '../models/folderModel.js';
 
+// Normalisasi kode warna hex. Mengembalikan '#rrggbb' (lowercase) bila valid,
+// null bila kosong, atau undefined bila formatnya tidak valid.
+// Mendukung format '#rgb' dan '#rrggbb'.
+function normalizeHexColor(value) {
+  if (value === undefined || value === null) return null;
+  const raw = String(value).trim();
+  if (raw === '') return null;
+  if (!/^#?[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(raw)) return undefined;
+
+  let hex = raw.startsWith('#') ? raw.slice(1) : raw;
+  if (hex.length === 3) {
+    hex = hex.split('').map((c) => c + c).join('');
+  }
+  return `#${hex.toLowerCase()}`;
+}
+
 const FolderController = {
   // Ambil daftar folder milik user
   async getFolders(req, res) {
@@ -19,13 +35,18 @@ const FolderController = {
   // Buat folder baru
   async createFolder(req, res) {
     try {
-      const { user_id, name, icon } = req.body;
+      const { user_id, name, icon, color } = req.body;
       if (!user_id || !name) {
         return res.status(400).json({ error: 'user_id dan nama folder wajib diisi.' });
       }
 
-      const id = await FolderModel.create(user_id, name, icon);
-      res.status(201).json({ id, name, icon: icon || 'fa-folder' });
+      const hexColor = normalizeHexColor(color);
+      if (hexColor === undefined) {
+        return res.status(400).json({ error: 'Kode warna tidak valid. Gunakan format hex, mis. #8128ed.' });
+      }
+
+      const id = await FolderModel.create(user_id, name, icon, hexColor);
+      res.status(201).json({ id, name, icon: icon || 'fa-folder', color: hexColor });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -35,17 +56,22 @@ const FolderController = {
   async updateFolder(req, res) {
     try {
       const { id } = req.params;
-      const { user_id, name, icon } = req.body;
+      const { user_id, name, icon, color } = req.body;
       if (!user_id || !name) {
         return res.status(400).json({ error: 'user_id dan nama folder wajib diisi.' });
       }
 
-      const affected = await FolderModel.update(id, user_id, name, icon);
+      const hexColor = normalizeHexColor(color);
+      if (hexColor === undefined) {
+        return res.status(400).json({ error: 'Kode warna tidak valid. Gunakan format hex, mis. #8128ed.' });
+      }
+
+      const affected = await FolderModel.update(id, user_id, name, icon, hexColor);
       if (!affected) {
         return res.status(404).json({ error: 'Folder tidak ditemukan.' });
       }
 
-      res.json({ id: Number(id), name, icon: icon || 'fa-folder' });
+      res.json({ id: Number(id), name, icon: icon || 'fa-folder', color: hexColor });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }

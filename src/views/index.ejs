@@ -119,6 +119,23 @@
       background: rgb(var(--c-300));
       border-radius: 4px;
     }
+
+    /* Card task yang foldernya punya warna custom: pattern mengikuti warna folder.
+       Warna folder di-set sebagai --folder-rgb di elemen card (format "r, g, b").
+       Border dibuat samar (alpha rendah) agar tetap lembut. */
+    .folder-accent-card {
+      border-color: rgb(var(--folder-rgb) / 0.25);
+    }
+    .folder-accent-card:hover {
+      border-color: rgb(var(--folder-rgb) / 0.45);
+      box-shadow: 0 4px 14px -6px rgb(var(--folder-rgb) / 0.35);
+    }
+    .folder-accent-card .folder-accent-title {
+      transition: color 0.2s ease;
+    }
+    .folder-accent-card:hover .folder-accent-title {
+      color: var(--folder-color);
+    }
   </style>
 </head>
 <body class="text-slate-700 min-h-screen flex flex-col antialiased">
@@ -417,7 +434,7 @@
           <!-- LEFT COLUMN: Task Info -->
           <div class="bg-white rounded-2xl border border-lavender-100 p-6 shadow-sm space-y-5 lg:col-span-1">
             <div class="flex items-start gap-3.5">
-              <div class="w-12 h-12 rounded-2xl bg-lavender-100 text-lavender-600 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+              <div id="screenDetailIconBox" class="w-12 h-12 rounded-2xl bg-lavender-100 text-lavender-600 flex items-center justify-center text-2xl shrink-0 shadow-inner">
                 <i id="screenDetailIcon" class="fa-solid fa-list-check"></i>
               </div>
               <div>
@@ -523,6 +540,20 @@
           <label class="block text-xs font-semibold text-slate-600 mb-1.5">Ikon Folder</label>
           <div class="grid grid-cols-6 gap-2" id="iconPickerContainer"></div>
           <input type="hidden" id="selectedFolderIcon" value="fa-folder">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Warna Folder <span class="text-slate-400 font-normal">(opsional)</span></label>
+          <div class="flex items-center gap-3">
+            <span id="folderColorPreview" class="shrink-0 w-10 h-10 rounded-xl border border-slate-200 bg-lavender-100 text-lavender-600 flex items-center justify-center">
+              <i class="fa-solid fa-folder"></i>
+            </span>
+            <div class="flex-1">
+              <input type="text" id="folderColorInput" placeholder="Contoh: #8128ed" maxlength="7" spellcheck="false" autocomplete="off"
+                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lavender-400 text-sm font-mono uppercase tracking-wide"/>
+              <p id="folderColorHint" class="text-[11px] text-slate-400 mt-1">Masukkan kode hex (mis. #8128ed). Kosongkan untuk warna tema default.</p>
+            </div>
+          </div>
         </div>
 
         <div class="pt-3 flex justify-end gap-2">
@@ -886,7 +917,8 @@
             state.folders = folderData.map(f => ({
               id: f.id,
               name: f.name,
-              icon: f.icon || 'fa-folder'
+              icon: f.icon || 'fa-folder',
+              color: f.color || null
             }));
             loaded = true;
           }
@@ -984,7 +1016,8 @@
         navAllBtn.className = "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-600 hover:bg-slate-100";
         const selected = state.folders.find(f => f.id === id);
         if (selected) {
-          document.getElementById('currentFolderTitle').innerHTML = `<i class="fa-solid ${selected.icon} text-lavender-600"></i> <span>${selected.name}</span>`;
+          const iconColorStyle = selected.color ? ` style="color:${selected.color}"` : ' class="text-lavender-600"';
+          document.getElementById('currentFolderTitle').innerHTML = `<i class="fa-solid ${selected.icon}"${iconColorStyle}></i> <span>${selected.name}</span>`;
           document.getElementById('currentFolderDesc').innerText = `Menampilkan tugas dalam folder ${selected.name}`;
         }
       }
@@ -1009,7 +1042,7 @@
 
         btn.innerHTML = `
           <div class="flex items-center gap-3 truncate">
-            <i class="fa-solid ${folder.icon} text-lavender-600 w-5"></i>
+            <i class="fa-solid ${folder.icon} ${folder.color ? '' : 'text-lavender-600'} w-5"${folder.color ? ` style="color:${folder.color}"` : ''}></i>
             <span class="truncate">${folder.name}</span>
           </div>
           <div class="flex items-center gap-1.5">
@@ -1081,19 +1114,43 @@
         const folder = state.folders.find(f => f.id === todo.folderId);
         const folderName = folder ? folder.name : 'Umum';
         const folderIcon = folder ? folder.icon : 'fa-folder';
+        const folderColor = folder && folder.color ? folder.color : null;
         const logCount = state.commitLogs.filter(l => l.todoId === todo.id).length;
 
         const card = document.createElement('div');
-        card.className = `bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between cursor-pointer group border-lavender-100 hover:border-lavender-300 ${
+        // Bila folder punya warna custom, pattern card mengikuti warna folder tsb.
+        // Saat status "selesai", warna status (emerald) tetap dominan; folder hanya jadi aksen.
+        const hasAccent = !!folderColor && todo.status !== 'completed';
+        card.className = `bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between cursor-pointer group ${
+          hasAccent ? 'folder-accent-card' : 'border-lavender-100 hover:border-lavender-300'
+        } ${
           todo.status === 'completed' ? 'bg-emerald-50/20 border-emerald-200' : ''
         }`;
+        if (folderColor) {
+          card.style.setProperty('--folder-color', folderColor);
+          card.style.setProperty('--folder-rgb', hexToRgbChannels(folderColor));
+        }
 
         card.onclick = () => openTodoDetailScreen(todo.id);
+
+        const accentStyle = folderColor ? ` style="color:${folderColor}"` : ' class="text-lavender-600"';
+        const folderBadgeStyle = folderColor
+          ? ` style="background-color:${folderColor}1a;color:${folderColor};border-color:${folderColor}33"`
+          : '';
+        const folderBadgeClass = folderColor
+          ? 'text-[11px] font-bold px-2.5 py-1 rounded-lg border flex items-center gap-1.5'
+          : 'text-[11px] font-bold px-2.5 py-1 rounded-lg bg-lavender-50 text-lavender-700 border border-lavender-100 flex items-center gap-1.5';
+        const logBadgeStyle = folderColor
+          ? ` style="background-color:${folderColor}1a;color:${folderColor};border-color:${folderColor}33"`
+          : '';
+        const logBadgeClass = folderColor
+          ? 'text-xs font-semibold px-2.5 py-1 rounded-xl border flex items-center gap-1'
+          : 'text-xs bg-lavender-50 text-lavender-700 border border-lavender-200 font-semibold px-2.5 py-1 rounded-xl flex items-center gap-1';
 
         card.innerHTML = `
           <div>
             <div class="flex items-center justify-between gap-2 mb-3">
-              <span class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-lavender-50 text-lavender-700 border border-lavender-100 flex items-center gap-1.5">
+              <span class="${folderBadgeClass}"${folderBadgeStyle}>
                 <i class="fa-solid ${folderIcon}"></i> ${folderName}
               </span>
               <span class="text-xs font-semibold px-2.5 py-1 rounded-lg ${
@@ -1113,8 +1170,8 @@
                 ${todo.status === 'completed' ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
               </button>
               <div class="flex-1 min-w-0">
-                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2 group-hover:text-lavender-700 transition ${todo.status === 'completed' ? 'line-through text-slate-400' : ''}">
-                  <i class="fa-solid ${todo.icon || 'fa-list-check'} text-lavender-600 shrink-0 text-sm"></i>
+                <h3 class="folder-accent-title font-bold text-slate-800 text-base flex items-center gap-2 transition ${todo.status === 'completed' ? 'line-through text-slate-400' : ''}">
+                  <i class="fa-solid ${todo.icon || 'fa-list-check'} shrink-0 text-sm"${accentStyle}></i>
                   <span>${todo.title}</span>
                 </h3>
                 <p class="text-xs text-slate-500 mt-1 line-clamp-2">${todo.desc || 'Tidak ada deskripsi'}</p>
@@ -1125,8 +1182,8 @@
           <div class="pt-3 border-t border-slate-100 flex items-center justify-between mt-3">
             <span class="text-[11px] text-slate-400 font-medium"><i class="fa-regular fa-clock"></i> ${todo.createdAt}</span>
             <div class="flex items-center gap-1.5">
-              <span class="text-xs bg-lavender-50 text-lavender-700 border border-lavender-200 font-semibold px-2.5 py-1 rounded-xl flex items-center gap-1">
-                <i class="fa-solid fa-code-commit text-lavender-600"></i> ${logCount} Log
+              <span class="${logBadgeClass}"${logBadgeStyle}>
+                <i class="fa-solid fa-code-commit"></i> ${logCount} Log
               </span>
             </div>
           </div>
@@ -1146,7 +1203,19 @@
       document.getElementById('detailScreenView').classList.remove('hidden');
 
       const folder = state.folders.find(f => f.id === todo.folderId);
+      const folderColor = folder && folder.color ? folder.color : null;
       const folderBadge = document.getElementById('screenDetailFolderBadge');
+      if (folderColor) {
+        folderBadge.className = "text-xs font-bold px-3 py-1.5 rounded-lg border flex items-center gap-1.5 shadow-sm";
+        folderBadge.style.backgroundColor = folderColor + '1a';
+        folderBadge.style.color = folderColor;
+        folderBadge.style.borderColor = folderColor + '33';
+      } else {
+        folderBadge.className = "text-xs font-bold px-3 py-1.5 rounded-lg bg-lavender-50 text-lavender-700 border border-lavender-200 flex items-center gap-1.5 shadow-sm";
+        folderBadge.style.backgroundColor = '';
+        folderBadge.style.color = '';
+        folderBadge.style.borderColor = '';
+      }
       folderBadge.innerHTML = `<i class="fa-solid ${folder ? folder.icon : 'fa-folder'}"></i> ${folder ? folder.name : 'Umum'}`;
 
       const statusBadge = document.getElementById('screenDetailStatusBadge');
@@ -1158,6 +1227,16 @@
         statusBadge.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Sedang Jalan`;
       }
 
+      const detailIconBox = document.getElementById('screenDetailIconBox');
+      if (detailIconBox) {
+        if (folderColor) {
+          detailIconBox.style.backgroundColor = folderColor + '1a';
+          detailIconBox.style.color = folderColor;
+        } else {
+          detailIconBox.style.backgroundColor = '';
+          detailIconBox.style.color = '';
+        }
+      }
       document.getElementById('screenDetailIcon').className = `fa-solid ${todo.icon || 'fa-list-check'}`;
       document.getElementById('screenDetailTitle').innerText = todo.title;
       document.getElementById('screenDetailDate').innerText = todo.createdAt;
@@ -1268,11 +1347,74 @@
     }
 
     // MODAL & FORM HANDLERS FOR FOLDER
+    const HEX_COLOR_REGEX = /^#?[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/;
+
+    // Normalisasi input hex dari user menjadi '#rrggbb' lowercase.
+    // Mengembalikan string bila valid, atau null bila kosong / tidak valid.
+    function normalizeHexColor(raw) {
+      const value = (raw || '').trim();
+      if (!value) return null;
+      if (!HEX_COLOR_REGEX.test(value)) return null;
+
+      let hex = value.startsWith('#') ? value.slice(1) : value;
+      if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+      return `#${hex.toLowerCase()}`;
+    }
+
+    // Konversi '#rrggbb' menjadi channel "r g b" untuk dipakai di rgb(var(--x) / alpha).
+    function hexToRgbChannels(hex) {
+      const value = normalizeHexColor(hex);
+      if (!value) return null;
+      const r = parseInt(value.slice(1, 3), 16);
+      const g = parseInt(value.slice(3, 5), 16);
+      const b = parseInt(value.slice(5, 7), 16);
+      return `${r} ${g} ${b}`;
+    }
+
+    // Perbarui swatch preview dan hint agar langsung mengikuti kode hex yang diketik.
+    function applyFolderColorPreview() {
+      const input = document.getElementById('folderColorInput');
+      const preview = document.getElementById('folderColorPreview');
+      const hint = document.getElementById('folderColorHint');
+
+      const value = input.value.trim();
+      const hex = normalizeHexColor(value);
+      const icon = document.getElementById('selectedFolderIcon').value || 'fa-folder';
+      preview.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+
+      if (!value) {
+        preview.style.backgroundColor = '';
+        preview.style.color = '';
+        preview.className = 'shrink-0 w-10 h-10 rounded-xl border border-slate-200 bg-lavender-100 text-lavender-600 flex items-center justify-center';
+        hint.className = 'text-[11px] text-slate-400 mt-1';
+        hint.textContent = 'Masukkan kode hex (mis. #8128ed). Kosongkan untuk warna tema default.';
+      } else if (hex) {
+        preview.style.backgroundColor = hex + '22';
+        preview.style.color = hex;
+        preview.className = 'shrink-0 w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center';
+        hint.className = 'text-[11px] text-slate-400 mt-1';
+        hint.textContent = `Warna folder: ${hex}`;
+      } else {
+        preview.style.backgroundColor = '';
+        preview.style.color = '';
+        preview.className = 'shrink-0 w-10 h-10 rounded-xl border border-rose-200 bg-rose-50 text-rose-400 flex items-center justify-center';
+        hint.className = 'text-[11px] text-rose-500 mt-1';
+        hint.textContent = 'Format tidak valid. Gunakan hex 3 atau 6 digit, mis. #8128ed.';
+      }
+    }
+
+    function setFolderColor(value) {
+      const normalized = normalizeHexColor(value);
+      document.getElementById('folderColorInput').value = normalized || (value || '');
+      applyFolderColorPreview();
+    }
+
     function openAddFolderModal() {
       document.getElementById('folderEditId').value = '';
       document.getElementById('folderNameInput').value = '';
       document.getElementById('folderModalTitle').innerHTML = `<i class="fa-solid fa-folder-plus text-lavender-600"></i> Tambah Folder Baru`;
       renderFolderIconPicker('fa-folder');
+      setFolderColor('');
       document.getElementById('folderModal').classList.remove('hidden');
     }
 
@@ -1284,6 +1426,7 @@
       document.getElementById('folderNameInput').value = folder.name;
       document.getElementById('folderModalTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-lavender-600"></i> Edit Folder`;
       renderFolderIconPicker(folder.icon || 'fa-folder');
+      setFolderColor(folder.color || '');
       document.getElementById('folderModal').classList.remove('hidden');
     }
 
@@ -1303,7 +1446,7 @@
           icon === selectedIcon ? 'bg-lavender-600 text-white border-lavender-600 shadow' : 'border-slate-200 text-slate-600 hover:bg-slate-100'
         }`;
         btn.innerHTML = `<i class="fa-solid ${icon}"></i>`;
-        btn.onclick = () => renderFolderIconPicker(icon);
+        btn.onclick = () => { renderFolderIconPicker(icon); applyFolderColorPreview(); };
         container.appendChild(btn);
       });
     }
@@ -1313,22 +1456,31 @@
       const id = document.getElementById('folderEditId').value;
       const name = document.getElementById('folderNameInput').value.trim();
       const icon = document.getElementById('selectedFolderIcon').value;
+      const rawColor = document.getElementById('folderColorInput').value.trim();
+      const color = normalizeHexColor(rawColor);
       const userId = state.currentUser?.id;
 
       if (!userId) { showToast('Sesi tidak valid, silakan masuk ulang.', 'error'); return; }
+
+      // Validasi warna: kosong diperbolehkan (pakai warna tema), tapi bila diisi harus hex valid.
+      if (rawColor && !color) {
+        showToast('Kode warna tidak valid. Gunakan format hex, mis. #8128ed.', 'error');
+        applyFolderColorPreview();
+        return;
+      }
 
       let response;
       if (id) {
         response = await safeFetch(`/api/folders/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId, name, icon })
+          body: JSON.stringify({ user_id: userId, name, icon, color })
         });
       } else {
         response = await safeFetch('/api/folders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId, name, icon })
+          body: JSON.stringify({ user_id: userId, name, icon, color })
         });
       }
 
@@ -1515,6 +1667,17 @@
     window.onload = async function() {
       const savedTheme = localStorage.getItem('user_theme') || 'sky';
       switchTheme(savedTheme);
+
+      // Preview warna folder langsung mengikuti kode hex yang diketik user.
+      const folderColorInput = document.getElementById('folderColorInput');
+      if (folderColorInput) {
+        folderColorInput.addEventListener('input', applyFolderColorPreview);
+        folderColorInput.addEventListener('blur', () => {
+          const normalized = normalizeHexColor(folderColorInput.value);
+          if (normalized) folderColorInput.value = normalized;
+          applyFolderColorPreview();
+        });
+      }
 
       const activeUser = localStorage.getItem('todo_iandev_active_user');
       if (activeUser) {

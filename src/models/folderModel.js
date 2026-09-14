@@ -11,19 +11,19 @@ const FolderModel = {
   },
 
   // Tambah folder baru
-  async create(userId, name, icon) {
+  async create(userId, name, icon, color) {
     const [result] = await db.execute(
-      'INSERT INTO folders (user_id, name, icon) VALUES (?, ?, ?)',
-      [userId, name, icon || 'fa-folder']
+      'INSERT INTO folders (user_id, name, icon, color) VALUES (?, ?, ?, ?)',
+      [userId, name, icon || 'fa-folder', color || null]
     );
     return result.insertId;
   },
 
   // Update folder berdasarkan ID
-  async update(id, userId, name, icon) {
+  async update(id, userId, name, icon, color) {
     const [result] = await db.execute(
-      'UPDATE folders SET name = ?, icon = ? WHERE id = ? AND user_id = ?',
-      [name, icon || 'fa-folder', id, userId]
+      'UPDATE folders SET name = ?, icon = ?, color = ? WHERE id = ? AND user_id = ?',
+      [name, icon || 'fa-folder', color || null, id, userId]
     );
     return result.affectedRows;
   },
