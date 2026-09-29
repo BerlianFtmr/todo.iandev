@@ -1,13 +1,13 @@
-import 'dotenv/config';
-import express from 'express';
-import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import userRoutes from './routes/userRoutes.js';
-import folderRoutes from './routes/folderRoutes.js';
-import todoRoutes from './routes/todoRoutes.js';
-import commitLogRoutes from './routes/commitLogRoutes.js';
-import pool from '../src/config/db.js';
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
+import userRoutes from "./routes/userRoutes.js";
+import folderRoutes from "./routes/folderRoutes.js";
+import todoRoutes from "./routes/todoRoutes.js";
+import commitLogRoutes from "./routes/commitLogRoutes.js";
+import pool from "./config/db.js";
 
 const app = express();
 
@@ -20,18 +20,17 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
 // Setup EJS Template Engine
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-app.use('/api/auth', userRoutes);
-app.use('/api/folders', folderRoutes);
-app.use('/api/todos', todoRoutes);
-app.use('/api/commit-logs', commitLogRoutes);
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+app.use("/api/auth", userRoutes);
+app.use("/api/folders", folderRoutes);
+app.use("/api/todos", todoRoutes);
+app.use("/api/commit-logs", commitLogRoutes);
 
 // Test Route Utama
-app.get('/', (req, res) => {
-  res.render('index');
+app.get("/", (req, res) => {
+  res.render("index");
 });
 
 // Jalankan Server
@@ -43,10 +42,10 @@ app.listen(PORT, () => {
 async function testConnection() {
   try {
     const connection = await pool.getConnection();
-    console.log('Database MySQL berhasil terhubung!');
+    console.log("Database MySQL berhasil terhubung!");
     connection.release(); // Kembalikan koneksi ke pool
   } catch (error) {
-    console.error('Gagal konek ke database MySQL:', error.message);
+    console.error("Gagal konek ke database MySQL:", error.message);
   }
 }
 
